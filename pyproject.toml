@@ -21,7 +21,8 @@ dev = [
     "pytest-xdist>=3.0",  # parallel tests: pytest -n auto (many-core hosts)
 ]
 play = [
-    "python-sat>=0.1.8",  # general_interactive_play.py (certificate play)
+    # PyPI only publishes .dev builds (no 0.1.8 final); 1.8+ is current
+    "python-sat>=0.1.7.dev1",
 ]
 viz = [
     "pyvis>=0.3",  # optional QCIR circuit visualization
