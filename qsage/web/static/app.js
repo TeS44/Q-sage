@@ -6,10 +6,38 @@ let selectedDomain = null;
 let selectedInstance = null;
 let playMode = "qbf"; // qbf | hybrid | certificate
 let state = null;
+/** True while a move/AI/solve request is in flight — blocks further clicks. */
+let busy = false;
 
 function log(msg) {
   const el = $("log");
   el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + el.textContent;
+}
+
+function setBusy(on, why) {
+  busy = !!on;
+  const wrap = $("board-wrap");
+  const ban = $("busyBanner");
+  if (wrap) wrap.classList.toggle("busy", busy);
+  if (ban) {
+    ban.classList.toggle("on", busy);
+    if (why) ban.textContent = why;
+    else if (busy) ban.textContent = "Waiting for QBF / AI… board locked";
+  }
+  // disable primary action buttons while busy
+  for (const id of [
+    "btnLoad",
+    "btnReset",
+    "btnUndo",
+    "btnAi",
+    "btnSolveInit",
+    "btnSolveMid",
+  ]) {
+    const el = $(id);
+    if (el) el.disabled = busy;
+  }
+  // re-render so cell handlers respect busy
+  if (state) render();
 }
 
 async function api(path, opts) {
@@ -20,21 +48,21 @@ async function api(path, opts) {
 }
 
 const MODE_HINT = {
-  qbf: "QBF solver: QuBi checks / can guide Black. Best when QuBi is fast.",
+  qbf: "QBF solver: after your move the board locks until QuBi replies.",
   hybrid:
-    "Hybrid: first moves from partial certificate (opening book), then QBF. Fast interactive play.",
+    "Hybrid: partial cert openings then QBF. Board locks until the reply.",
   certificate:
-    "Certificate: play against a precomputed winning strategy (CNF). Use Certificates domain.",
+    "Certificate: play against a precomputed strategy. Use Certificates domain.",
 };
 
 function setMode(mode) {
+  if (busy) return;
   playMode = mode;
   document.querySelectorAll("#modes .chip").forEach((b) => {
     b.classList.toggle("active", b.dataset.mode === mode);
   });
   $("modeHint").textContent = MODE_HINT[mode] || "";
   $("stMode").textContent = mode;
-  // auto-pick domain when switching to certificate
   if (mode === "certificate") {
     const cert = domains.find((d) => d.kind === "certificate");
     if (cert) selectDomain(cert.id);
@@ -51,23 +79,21 @@ async function loadDomains() {
     b.type = "button";
     b.className = "chip" + (selectedDomain === d.id ? " active" : "");
     b.innerHTML = `${d.label} <span class="n">(${d.count})</span>`;
-    b.onclick = () => selectDomain(d.id);
+    b.onclick = () => {
+      if (!busy) selectDomain(d.id);
+    };
     box.appendChild(b);
   }
   if (!selectedDomain && domains.length) {
-    // default first hex domain
     const hex = domains.find((d) => d.kind === "hex") || domains[0];
     await selectDomain(hex.id);
   }
 }
 
 async function selectDomain(id) {
+  if (busy) return;
   selectedDomain = id;
   selectedInstance = null;
-  document.querySelectorAll("#domains .chip").forEach((b, i) => {
-    b.classList.toggle("active", domains[i] && domains[i].id === id);
-  });
-  // re-render chips properly
   const box = $("domains");
   box.innerHTML = "";
   for (const d of domains) {
@@ -75,7 +101,9 @@ async function selectDomain(id) {
     b.type = "button";
     b.className = "chip" + (d.id === id ? " active" : "");
     b.innerHTML = `${d.label} <span class="n">(${d.count})</span>`;
-    b.onclick = () => selectDomain(d.id);
+    b.onclick = () => {
+      if (!busy) selectDomain(d.id);
+    };
     box.appendChild(b);
   }
 
@@ -93,13 +121,6 @@ async function selectDomain(id) {
     b.className = "inst";
     b.dataset.path = p.path;
     let badges = "";
-    if (p.has_partial) {
-      badges += `<span class="badge book">book×${p.partial_layers || 0}</span>`;
-      if (p.partial_status === "SAT")
-        badges += `<span class="badge sat">SAT</span>`;
-      else if (p.partial_status)
-        badges += `<span class="badge">${p.partial_status}</span>`;
-    }
     if (p.qbf_status) {
       const cls = p.qbf_status === "SAT" ? "sat" : "";
       badges += `<span class="badge ${cls}">${p.qbf_status}${
@@ -108,6 +129,7 @@ async function selectDomain(id) {
     }
     b.innerHTML = `${p.label}${badges}`;
     b.onclick = () => {
+      if (busy) return;
       selectedInstance = p;
       document.querySelectorAll(".inst").forEach((x) => x.classList.remove("active"));
       b.classList.add("active");
@@ -119,7 +141,6 @@ async function selectDomain(id) {
     };
     list.appendChild(b);
   }
-  // auto-select first or hein_04_3x3-05
   const prefer =
     instances.find((p) => p.label.includes("hein_04_3x3-05")) || instances[0];
   const btn = [...list.querySelectorAll(".inst")].find(
@@ -131,12 +152,18 @@ async function selectDomain(id) {
 function render() {
   if (!state) return;
   $("stMode").textContent = state.play_mode || playMode;
-  $("status").textContent = state.finished
-    ? state.winner
-      ? `Over — ${state.winner}`
-      : "Game over"
-    : "Playing";
-  $("tomove").textContent = state.finished ? "—" : state.to_move;
+  $("status").textContent = busy
+    ? "Waiting for solver…"
+    : state.finished
+      ? state.winner
+        ? `Over — ${state.winner}`
+        : "Game over"
+      : "Playing";
+  $("tomove").textContent = busy
+    ? "—"
+    : state.finished
+      ? "—"
+      : state.to_move;
   $("depth").textContent = state.depth_bound ?? "—";
   $("moves").textContent = state.moves_played ?? "—";
   $("msg").textContent = state.message || "";
@@ -185,8 +212,11 @@ function render() {
       if (end.has(pos)) td.classList.add("end");
       td.textContent = v === "open" || v === "-" ? "" : String(v)[0].toUpperCase();
       td.title = pos;
-      if ((v === "open" || v === "-") && !state.finished) {
+      // Only accept clicks when not busy, game open, and cell open
+      if ((v === "open" || v === "-") && !state.finished && !busy) {
         td.onclick = () => onCell(pos);
+      } else if (busy && (v === "open" || v === "-")) {
+        td.style.cursor = "wait";
       }
       tr.appendChild(td);
     }
@@ -195,6 +225,7 @@ function render() {
 }
 
 async function loadGame() {
+  if (busy) return;
   if (!selectedInstance) {
     log("Pick an instance first");
     return;
@@ -214,25 +245,42 @@ async function loadGame() {
     log("Hybrid mode is for Hex boards");
     mode = "qbf";
   }
-  const q = new URLSearchParams({
-    path: p.path,
-    kind,
-    mode,
-  });
+  const q = new URLSearchParams({ path: p.path, kind, mode });
   if (p.domain) q.set("domain_file", p.domain);
-  state = await api("/api/new?" + q);
-  log(`Loaded [${mode}] ${p.label}`);
-  if (mode === "certificate") {
-    log("Click “AI / strategy move” for Black, then click a cell for White.");
-  }
-  if (mode === "hybrid" && !p.has_partial) {
-    log("No partial cert yet — hybrid will use short QBF. Generate with scripts/generate_partial_certs.py");
+  setBusy(true, "Loading…");
+  try {
+    state = await api("/api/new?" + q);
+    log(`Loaded [${mode}] ${p.label}`);
+    if (mode === "certificate") {
+      log("Click “AI / strategy move” for Black, then click a cell for White.");
+    }
+  } catch (e) {
+    log("Load: " + e.message);
+  } finally {
+    setBusy(false);
   }
   render();
 }
 
 async function onCell(pos) {
-  if (!state) return;
+  if (!state || busy) return;
+  // Prefer opponent that needs a solver reply
+  const opp =
+    state.kind === "certificate"
+      ? null
+      : playMode === "hybrid"
+        ? "hybrid"
+        : playMode === "qbf"
+          ? "qbf"
+          : "random";
+
+  const waitingForSolver = opp === "qbf" || opp === "hybrid";
+  setBusy(
+    true,
+    waitingForSolver
+      ? "Your move sent — waiting for QBF…"
+      : "Processing move…"
+  );
   try {
     if (state.kind === "certificate") {
       state = await api("/api/move", {
@@ -242,12 +290,6 @@ async function onCell(pos) {
       });
       log(`White → ${pos}`);
     } else {
-      const opp =
-        playMode === "hybrid"
-          ? "hybrid"
-          : playMode === "qbf"
-            ? "qbf"
-            : "random";
       state = await api("/api/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -255,22 +297,27 @@ async function onCell(pos) {
           session: state.session,
           position: pos,
           opponent: opp,
+          timeout: 3,
         }),
       });
       let msg = `You → ${pos}`;
       if (state.last_ai) {
         msg += ` · AI ${state.last_ai.color}→${state.last_ai.position} (${state.last_ai.mode})`;
+      } else if (waitingForSolver && !state.finished) {
+        msg += " · (no AI move — maybe not Black’s turn or game over)";
       }
       log(msg);
     }
-    render();
   } catch (e) {
     log("Error: " + e.message);
+  } finally {
+    setBusy(false);
   }
+  render();
 }
 
 async function aiMove() {
-  if (!state) return;
+  if (!state || busy) return;
   const mode =
     state.kind === "certificate"
       ? "strategy"
@@ -279,26 +326,30 @@ async function aiMove() {
         : playMode === "qbf"
           ? "qbf"
           : "random";
+  setBusy(true, mode === "qbf" || mode === "hybrid" ? "QBF thinking…" : "AI…");
   try {
     log(`AI (${mode})…`);
     state = await api("/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session: state.session, mode }),
+      body: JSON.stringify({ session: state.session, mode, timeout: 3 }),
     });
     if (state.last_ai) {
       log(
         `AI ${state.last_ai.color} → ${state.last_ai.position} (${state.last_ai.mode})`
       );
     } else log("AI done");
-    render();
   } catch (e) {
     log("AI: " + e.message);
+  } finally {
+    setBusy(false);
   }
+  render();
 }
 
 async function undo() {
-  if (!state) return;
+  if (!state || busy) return;
+  setBusy(true, "Undo…");
   try {
     state = await api("/api/undo", {
       method: "POST",
@@ -306,14 +357,17 @@ async function undo() {
       body: JSON.stringify({ session: state.session, undo_ai: true }),
     });
     log("Undo");
-    render();
   } catch (e) {
     log("Undo: " + e.message);
+  } finally {
+    setBusy(false);
   }
+  render();
 }
 
 async function solve(mid) {
-  if (!state) return;
+  if (!state || busy) return;
+  setBusy(true, mid ? "QuBi mid-game…" : "QuBi from start…");
   log(mid ? "QuBi mid-game…" : "QuBi from start…");
   try {
     const res = await api("/api/solve", {
@@ -323,7 +377,7 @@ async function solve(mid) {
         session: state.session,
         midgame: !!mid,
         encoding: "pg",
-        timeout: 90,
+        timeout: 3,
       }),
     });
     log(
@@ -331,7 +385,10 @@ async function solve(mid) {
     );
   } catch (e) {
     log("Solve: " + e.message);
+  } finally {
+    setBusy(false);
   }
+  render();
 }
 
 // wire UI
@@ -345,5 +402,5 @@ $("btnAi").onclick = () => aiMove();
 $("btnSolveInit").onclick = () => solve(false);
 $("btnSolveMid").onclick = () => solve(true);
 
-setMode("hybrid");
+setMode("qbf");
 loadDomains().catch((e) => log(String(e)));
