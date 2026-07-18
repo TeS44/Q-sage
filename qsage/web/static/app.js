@@ -18,13 +18,17 @@ function setBusy(on, why) {
   busy = !!on;
   const wrap = $("board-wrap");
   const ban = $("busyBanner");
+  const title = $("busyTitle");
+  const detail = $("busyDetail");
   if (wrap) wrap.classList.toggle("busy", busy);
-  if (ban) {
-    ban.classList.toggle("on", busy);
-    if (why) ban.textContent = why;
-    else if (busy) ban.textContent = "Waiting for QBF / AI… board locked";
+  if (ban) ban.classList.toggle("on", busy);
+  if (busy) {
+    const msg = why || "Waiting for QBF / AI… board locked";
+    // Split "Title — detail" or use whole as title
+    const parts = msg.split(/\s+[—–-]\s+/);
+    if (title) title.textContent = parts[0] || "Solver running";
+    if (detail) detail.textContent = parts.slice(1).join(" — ") || "Board locked until the reply finishes";
   }
-  // disable primary action buttons while busy
   for (const id of [
     "btnLoad",
     "btnReset",
@@ -36,7 +40,6 @@ function setBusy(on, why) {
     const el = $(id);
     if (el) el.disabled = busy;
   }
-  // re-render so cell handlers respect busy
   if (state) render();
 }
 
@@ -518,8 +521,8 @@ async function onCell(pos) {
   setBusy(
     true,
     waitingForSolver
-      ? "Your move sent — waiting for QBF…"
-      : "Processing move…"
+      ? "QuBi running — computing Black’s reply"
+      : "Processing move"
   );
   try {
     if (state.kind === "certificate") {
@@ -566,7 +569,12 @@ async function aiMove() {
         : playMode === "qbf"
           ? "qbf"
           : "random";
-  setBusy(true, mode === "qbf" || mode === "hybrid" ? "QBF thinking…" : "AI…");
+  setBusy(
+    true,
+    mode === "qbf" || mode === "hybrid"
+      ? "QuBi running — AI move"
+      : "AI thinking"
+  );
   try {
     log(`AI (${mode})…`);
     state = await api("/api/ai", {
@@ -607,7 +615,10 @@ async function undo() {
 
 async function solve(mid) {
   if (!state || busy) return;
-  setBusy(true, mid ? "QuBi mid-game…" : "QuBi from start…");
+  setBusy(
+    true,
+    mid ? "QuBi running — mid-game check" : "QuBi running — full puzzle"
+  );
   log(mid ? "QuBi mid-game…" : "QuBi from start…");
   try {
     const res = await api("/api/solve", {
