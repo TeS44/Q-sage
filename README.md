@@ -4,7 +4,8 @@ Generates lifted QBF encodings for finding winning strategies of bounded depth.
 
 ## New package (`qsage/`) — rewrite in progress
 
-Smaller modular code for students and future work. See `docs/DESIGN.md`.  
+Smaller modular code for students and future work. See `docs/DESIGN.md` and the backlog in `docs/ISSUES.md`.  
+**Priority:** match encoding output (QCIR) first; solvers/UI later.  
 Legacy `Q-sage.py` remains the reference encoder until encodings are ported.
 
 ```bash

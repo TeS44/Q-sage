@@ -34,12 +34,17 @@ tests/
 docs/DESIGN.md
 ```
 
+## Priority
+
+**Encoding output parity first** (normalized QCIR vs goldens).  
+Fix bugs and UI only after encodings match. Full backlog: [`docs/ISSUES.md`](ISSUES.md).
+
 ## Suggested work order
 
 1. ~~Scaffold + design~~  
 2. ~~Lark parsers + benchmark tests~~  
-3. In-memory QCIR + QDIMACS  
-4. Port `bwnib`, golden tests vs legacy  
+3. **Port `bwnib` + golden QCIR tests** (`QBF_instances/*_bwnib.qcir`) ← **now**  
+4. In-memory QCIR + QDIMACS  
 5. Port positional encodings from the papers  
 6. Solvers + certificates  
 7. Play API + localhost UI  
