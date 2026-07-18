@@ -74,8 +74,13 @@ All items below are open on GitHub: [TeS44/Q-sage issues](https://github.com/TeS
 
 ### #9 Winning-strategy certificates (full + partial)
 
-**Status:** SQval integrated (`scripts/setup_sqval.sh`, `qsage cert …`).  
-Demo equivalence works (Docker on Mac). Pedant *generation* still open.
+**Status:** Architecture centered on **partial certs + hybrid play**:
+- SQval: equivalence, static/dynamic/hybrid validation
+- `qsage cert hybrid --depth N` (cert prefix, DepQBF/QuAbs tail)
+- `qsage cert demo-partial` (shared-var partial strategy)
+- `qsage cert generate` (Pedant CNF; optional DepQBF+qrpcert AIGER)
+
+Still open: truncated partial-AIGER export; web mid-game hybrid (#3); bundle qrpcert.
 
 **Depends on:** #8 · **Feeds:** #3
 

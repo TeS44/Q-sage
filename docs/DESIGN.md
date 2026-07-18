@@ -27,7 +27,7 @@ qsage/
   games/      # board state, legal moves
   encode/     # QCIR builders (paper encodings only)
   solve/      # QDIMACS + solver wrappers
-  strategy/   # winning-strategy certificates
+  strategy/   # partial/full certs (DepQBF/Pedant) + SQval hybrid play
   play/       # opponents: human / random / solver / cert
   cli/        # qsage encode | solve | play | …
 tests/

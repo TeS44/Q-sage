@@ -85,6 +85,135 @@ def cmd_cert_validate(args: argparse.Namespace) -> int:
         return 2
 
 
+def cmd_cert_demo_partial(args: argparse.Namespace) -> int:
+    """Partial shared-strategy equivalence (Hein_12 BOW)."""
+    from qsage.strategy import sqval
+
+    paths = sqval.demo_partial_equivalence_paths()
+    missing = [k for k, p in paths.items() if not p.is_file()]
+    if missing:
+        print(
+            "SQval partial demo files missing:",
+            ", ".join(missing),
+            "\nRun: bash scripts/setup_sqval.sh",
+            file=sys.stderr,
+        )
+        return 2
+    # Direction that holds: BOW_0 cert → BOW_1 (see SQval README)
+    res = sqval.run_equivalence(
+        paths["instance1"],
+        paths["instance2"],
+        paths["certificate"],
+        paths["shared_variables"],
+    )
+    print(res.message)
+    print(
+        "(partial shared vars: cert for BOW_0 applied to BOW_1 — "
+        "scalable partial-strategy transfer)"
+    )
+    if res.raw.strip():
+        lines = [ln for ln in res.raw.strip().splitlines() if ln.strip()]
+        for ln in lines[-8:]:
+            print(ln)
+    return 0 if res.equivalent else 1
+
+
+def cmd_cert_hybrid(args: argparse.Namespace) -> int:
+    """Hybrid interactive validation: partial cert + DepQBF tail."""
+    from qsage.strategy import sqval
+
+    depth = args.depth
+    if depth is None:
+        print("need --depth N (cert layers before solver)", file=sys.stderr)
+        return 2
+    if args.demo:
+        paths = sqval.demo_hybrid_paths()
+        missing = [k for k, p in paths.items() if k != "qdimacs" and not p.is_file()]
+        if missing:
+            print(
+                "SQval hybrid demo files missing:",
+                ", ".join(missing),
+                "\nRun: bash scripts/setup_sqval.sh",
+                file=sys.stderr,
+            )
+            return 2
+        instance = paths["instance"]
+        certificate = paths["certificate"]
+        status = "sat"
+    else:
+        if not args.instance or not args.certificate:
+            print(
+                "need --instance and --certificate (or --demo)",
+                file=sys.stderr,
+            )
+            return 2
+        instance = args.instance
+        certificate = args.certificate
+        status = args.status or "sat"
+
+    player = args.player or "random"
+    if player == "user":
+        # Interactive: hand off to SQval TTY
+        extra = [
+            "--instance",
+            str(instance),
+            "--certificate",
+            str(certificate),
+            "--validation",
+            "hybrid",
+            "--hybrid_depth",
+            str(depth),
+            "--status",
+            status,
+            "--player",
+            "user",
+        ]
+        return sqval.launch_interactive_validation(extra)
+
+    res = sqval.run_hybrid_validation(
+        instance,
+        certificate,
+        depth,
+        status=status,
+        player=player,
+        seed=args.seed,
+    )
+    print(res.message)
+    if res.raw.strip():
+        lines = [ln for ln in res.raw.strip().splitlines() if ln.strip()]
+        for ln in lines[-20:]:
+            print(ln)
+    return 0 if res.ok else 1
+
+
+def cmd_cert_generate(args: argparse.Namespace) -> int:
+    """Generate a strategy certificate (Pedant CNF or DepQBF+qrpcert AIGER)."""
+    from qsage.strategy import depqbf
+
+    if not args.qdimacs:
+        print("need --qdimacs", file=sys.stderr)
+        return 2
+    out = Path(args.out) if args.out else Path("certificate.cnf")
+    backend = args.backend or "pedant"
+    if backend == "pedant":
+        res = depqbf.generate_certificate_pedant(
+            args.qdimacs, out, timeout=args.timeout
+        )
+    elif backend in ("depqbf", "qrpcert", "depqbf+qrpcert"):
+        if out.suffix not in (".aag", ".aig"):
+            out = out.with_suffix(".aag")
+        res = depqbf.generate_certificate_depqbf_qrp(
+            args.qdimacs, out, timeout=args.timeout
+        )
+    else:
+        print(f"unknown backend {backend!r} (pedant|depqbf)", file=sys.stderr)
+        return 2
+    print(res.message)
+    if res.raw and args.verbose:
+        print(res.raw[-2000:])
+    return 0 if res.ok else 1
+
+
 def cmd_web(args: argparse.Namespace) -> int:
     from qsage.web.server import serve
 
@@ -330,6 +459,58 @@ def main(argv: list[str] | None = None) -> None:
         help="Shortcut: SQval Hein_04 LN vs SN equivalence demo",
     )
     c_demo.set_defaults(func=cmd_cert_demo)
+
+    c_partial = c_sub.add_parser(
+        "demo-partial",
+        help="Partial shared-strategy equivalence (Hein_12 BOW)",
+    )
+    c_partial.set_defaults(func=cmd_cert_demo_partial)
+
+    c_hyb = c_sub.add_parser(
+        "hybrid",
+        help=(
+            "Hybrid play: cert for first --depth layers, DepQBF/QuAbs after "
+            "(partial certs → scalable interactive validation)"
+        ),
+    )
+    c_hyb.add_argument(
+        "--depth",
+        type=int,
+        required=True,
+        help="hybrid_depth: use certificate for layers k < depth",
+    )
+    c_hyb.add_argument("--demo", action="store_true", help="Hein_04 SAT demo files")
+    c_hyb.add_argument("--instance", help="QCIR or QDIMACS")
+    c_hyb.add_argument("--certificate", help="AIGER or CNF certificate")
+    c_hyb.add_argument("--status", default="sat", choices=("sat", "unsat"))
+    c_hyb.add_argument(
+        "--player",
+        default="random",
+        choices=("random", "user"),
+        help="random = non-interactive (CI/Docker); user = terminal",
+    )
+    c_hyb.add_argument("--seed", type=int, default=0)
+    c_hyb.set_defaults(func=cmd_cert_hybrid)
+
+    c_gen = c_sub.add_parser(
+        "generate",
+        help="Generate strategy cert (Pedant CNF or DepQBF+qrpcert AIGER)",
+    )
+    c_gen.add_argument("--qdimacs", required=True, help="input QDIMACS")
+    c_gen.add_argument(
+        "--out",
+        default="certificate.cnf",
+        help="output path (default certificate.cnf)",
+    )
+    c_gen.add_argument(
+        "--backend",
+        default="pedant",
+        choices=("pedant", "depqbf", "depqbf+qrpcert"),
+        help="pedant → CNF; depqbf → AIGER via qrpcert (optional install)",
+    )
+    c_gen.add_argument("--timeout", type=int, default=300)
+    c_gen.add_argument("-v", "--verbose", action="store_true")
+    c_gen.set_defaults(func=cmd_cert_generate)
 
     w = sub.add_parser(
         "web",

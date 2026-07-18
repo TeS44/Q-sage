@@ -185,11 +185,18 @@ qsage play certificate -- --certificate_path path/to/certificate.cnf --player us
 
 Planned local web UI: [issue #3](https://github.com/TeS44/Q-sage/issues/3).
 
-### Certificates (full / partial) — SQval
+### Certificates (full / partial) — DepQBF-class + SQval
+
+**Key idea:** DepQBF-like tools make **partial** certificates cheap. Hybrid
+interactive play uses the cert for the first *n* quantifier layers and a QBF
+solver (DepQBF/QuAbs) for the rest — scalable generation + play.
 
 ```bash
 bash scripts/setup_sqval.sh
-qsage cert demo-equivalence          # Hein_04 LN cert → SN instance (Docker on Mac)
+qsage cert demo-equivalence          # full-strategy transfer LN→SN (Docker on Mac)
+qsage cert demo-partial              # partial shared-var equivalence (Hein_12)
+qsage cert hybrid --depth 2 --demo   # cert opening + solver tail
+qsage cert generate --qdimacs f.qdimacs --out cert.cnf   # Pedant (Docker on Mac)
 qsage cert validate -- …             # passthrough to SQval interactive_validation.py
 ```
 
@@ -202,7 +209,7 @@ qsage web
 # open http://127.0.0.1:8765/
 ```
 
-Hex board play (click cells, optional QuBi check on the original puzzle). Certificate-heavy validation stays on the SQval CLI for now.
+Hex board play (click cells, optional QuBi check on the original puzzle). Hybrid / partial-certificate play is on the SQval CLI (`qsage cert hybrid`); web mid-game cert play is next.
 
 ---
 
