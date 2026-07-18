@@ -174,21 +174,30 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(200, sess)
                     return
 
-                # hex
+                # hex — vs engine: you are White, opponent Black
                 sess = hex_session.new_hex_session(path)
-                sess["play_mode"] = mode if mode in ("qbf", "hybrid", "random") else "qbf"
-                if sess["play_mode"] == "hybrid":
+                sess["play_mode"] = mode if mode in ("qbf", "hybrid", "random", "none") else "qbf"
+                sess["human_color"] = "W"
+                sess["ai_color"] = "B"
+                if sess["play_mode"] == "none":
+                    sess["human_color"] = "B"  # first to move; manual both
+                    sess["ai_color"] = "W"
+                    sess["message"] = "Manual mode: you play both colours."
+                elif sess["play_mode"] == "hybrid":
                     book = load_partial(path)
                     n = len((book or {}).get("layers") or [])
                     sess["message"] = (
-                        f"Hybrid mode: partial cert ({n} opening plies) then QBF."
+                        f"You are White · opponent Black (hybrid). "
+                        f"Partial book: {n} plies."
                         if book
-                        else "Hybrid mode: no partial cert yet — using QBF/random. "
-                        "Run: python3 scripts/generate_partial_certs.py"
+                        else "You are White · opponent Black (hybrid → QBF)."
                     )
+                elif sess["play_mode"] == "qbf":
+                    sess["message"] = "You are White · opponent Black (QBF / QuBi)."
+                elif sess["play_mode"] == "random":
+                    sess["message"] = "You are White · opponent Black (random)."
                 _SESSIONS[sess["session"]] = sess
                 pub = hex_session.public_hex(sess)
-                pub["play_mode"] = sess["play_mode"]
                 pub["has_partial"] = has_partial(path)
                 self._json(200, pub)
             except Exception as e:
@@ -222,27 +231,45 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(400, {"error": "board moves only for hex/certificate"})
                     return
                 pos = body["position"]
-                # opponent: from body or session play_mode
-                mode = body.get("opponent") or sess.get("play_mode") or "random"
-                hex_session.apply_move(sess, pos)
-                if not sess["finished"] and sess["to_move"] == "B":
+                mode = body.get("opponent") or sess.get("play_mode") or "qbf"
+                human = sess.get("human_color") or "W"
+                ai = sess.get("ai_color") or "B"
+                # Human may only move as their colour (White vs AI)
+                if sess["to_move"] != human and mode != "none":
+                    self._json(
+                        400,
+                        {
+                            "error": (
+                                f"Not your turn — you are "
+                                f"{'White' if human == 'W' else 'Black'}; "
+                                f"waiting for "
+                                f"{'Black' if ai == 'B' else 'White'} ({mode})"
+                            )
+                        },
+                    )
+                    return
+                hex_session.apply_move(sess, pos, as_human=True)
+                # After human White, engine Black replies
+                if (
+                    not sess["finished"]
+                    and sess["to_move"] == ai
+                    and mode in ("hybrid", "qbf", "random")
+                ):
                     t_ai = float(body.get("timeout") or 2.0)
                     if mode == "hybrid":
                         hex_session.ai_hybrid_black_move(sess, qbf_timeout=t_ai)
                     elif mode == "qbf":
                         hex_session.ai_qbf_black_move(sess, timeout=t_ai)
                     elif mode == "random":
-                        hex_session.random_move(sess, "B")
-                pub = hex_session.public_hex(sess)
-                pub["play_mode"] = sess.get("play_mode")
-                self._json(200, pub)
+                        hex_session.random_move(sess, ai)
+                self._json(200, hex_session.public_hex(sess))
                 return
 
             if u.path == "/api/ai":
                 if not sess:
                     self._json(400, {"error": "unknown session"})
                     return
-                mode = body.get("mode") or sess.get("play_mode") or "random"
+                mode = body.get("mode") or sess.get("play_mode") or "qbf"
                 t_ai = float(body.get("timeout") or 2.0)
                 if sess.get("kind") == "certificate":
                     pub = cert_session.strategy_black_move(sess)
@@ -250,15 +277,27 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(200, pub)
                     return
                 if sess.get("kind") == "hex":
+                    ai = sess.get("ai_color") or "B"
+                    if sess["to_move"] != ai and mode != "none":
+                        # still allow explicit AI button only on AI's turn
+                        self._json(
+                            400,
+                            {
+                                "error": (
+                                    f"AI is "
+                                    f"{'Black' if ai == 'B' else 'White'}; "
+                                    f"it is not their turn"
+                                )
+                            },
+                        )
+                        return
                     if mode in ("hybrid", "strategy"):
                         hex_session.ai_hybrid_black_move(sess, qbf_timeout=t_ai)
                     elif mode == "qbf":
                         hex_session.ai_qbf_black_move(sess, timeout=t_ai)
                     else:
-                        hex_session.random_move(sess, sess.get("to_move") or "B")
-                    pub = hex_session.public_hex(sess)
-                    pub["play_mode"] = sess.get("play_mode")
-                    self._json(200, pub)
+                        hex_session.random_move(sess, ai)
+                    self._json(200, hex_session.public_hex(sess))
                     return
                 self._json(400, {"error": "ai not available"})
                 return

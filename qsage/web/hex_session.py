@@ -43,10 +43,25 @@ def new_hex_session(rel_path: str) -> dict:
         "moves_played": 0,
         "last_ai": None,
         "message": None,
+        # vs AI: human is White, engine is Black (standard online Hex)
+        "human_color": "W",
+        "ai_color": "B",
+        "play_mode": "qbf",
     }
 
 
 def public_hex(sess: dict) -> dict:
+    mode = sess.get("play_mode") or "qbf"
+    human = sess.get("human_color") or "W"
+    ai = sess.get("ai_color") or "B"
+    labels = {"B": "Black", "W": "White"}
+    opp_name = {
+        "qbf": "QBF (QuBi)",
+        "hybrid": "Hybrid (book + QBF)",
+        "random": "Random",
+        "none": "— (manual / both sides)",
+    }.get(mode, mode)
+    your_turn = (not sess["finished"]) and sess["to_move"] == human
     return {
         "session": sess["session"],
         "kind": "hex",
@@ -62,6 +77,27 @@ def public_hex(sess: dict) -> dict:
         "positions": list(sess["positions"]),
         "start_border": list(sess.get("start_border") or []),
         "end_border": list(sess.get("end_border") or []),
+        "play_mode": mode,
+        "human_color": human,
+        "ai_color": ai,
+        "you_are": labels.get(human, human),
+        "opponent_is": labels.get(ai, ai),
+        "opponent_engine": opp_name,
+        "your_turn": your_turn,
+        "turn_hint": (
+            "Game over"
+            if sess["finished"]
+            else (
+                f"Your turn — play as {labels.get(human, human)}"
+                if your_turn
+                else f"Opponent’s turn — {labels.get(ai, ai)} ({opp_name})"
+            )
+        ),
+        "needs_ai_move": (
+            not sess["finished"]
+            and mode in ("qbf", "hybrid", "random")
+            and sess["to_move"] == ai
+        ),
     }
 
 
@@ -90,10 +126,25 @@ def _path_exists(sess: dict, color: str) -> bool:
     return False
 
 
-def apply_move(sess: dict, pos: str, color: str | None = None) -> None:
+def apply_move(
+    sess: dict,
+    pos: str,
+    color: str | None = None,
+    *,
+    as_human: bool = False,
+) -> None:
     if sess["finished"]:
         raise ValueError("game finished")
     color = color or sess["to_move"]
+    if as_human:
+        human = sess.get("human_color") or "W"
+        if sess.get("play_mode") in ("qbf", "hybrid", "random") and color != human:
+            raise ValueError(
+                f"You play as {human} ({'White' if human == 'W' else 'Black'}); "
+                "wait for the opponent"
+            )
+        if color != human and sess.get("play_mode") != "none":
+            raise ValueError(f"not your color to move (you are {human})")
     if pos not in sess["cells"] or sess["cells"][pos] != "open":
         raise ValueError(f"illegal move {pos}")
     if color != sess["to_move"]:

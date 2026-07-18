@@ -150,6 +150,7 @@ def _read_board(sess: dict) -> dict[str, str]:
 
 
 def public_cert(sess: dict) -> dict:
+    your_turn = (not sess["finished"]) and sess["to_move"] == "W"
     return {
         "session": sess["session"],
         "kind": "certificate",
@@ -161,9 +162,27 @@ def public_cert(sess: dict) -> dict:
         "depth_bound": sess["depth_bound"],
         "moves_played": sess["time_step"],
         "last_ai": sess.get("last_ai"),
-        "message": sess.get("message"),
+        "message": sess.get("message")
+        or "You are White · opponent Black (winning-strategy certificate)",
         "board_w": sess["board_w"],
         "board_h": sess["board_h"],
+        "play_mode": "certificate",
+        "human_color": "W",
+        "ai_color": "B",
+        "you_are": "White",
+        "opponent_is": "Black",
+        "opponent_engine": "Strategy certificate",
+        "your_turn": your_turn,
+        "turn_hint": (
+            "Game over"
+            if sess["finished"]
+            else (
+                "Your turn — play as White"
+                if your_turn
+                else "Opponent’s turn — Black (certificate); use AI / strategy move"
+            )
+        ),
+        "needs_ai_move": (not sess["finished"]) and sess["to_move"] == "B",
     }
 
 

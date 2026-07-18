@@ -62,6 +62,36 @@
       background: var(--panel); border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem;
     }
     .status-bar strong { color: var(--accent); }
+    #colorBanner {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+      padding: 0.75rem 1rem; border-radius: 10px;
+      background: #152033; border: 1px solid var(--border); font-size: 0.95rem;
+    }
+    #colorBanner .pill {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.35rem 0.75rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem;
+    }
+    #colorBanner .pill.you-W {
+      background: #f5f0e6; color: #1a1a1a; border: 2px solid #fff;
+      box-shadow: 0 0 0 2px #3d8bfd;
+    }
+    #colorBanner .pill.you-B {
+      background: #1a1a1a; color: #eee; border: 2px solid #666;
+      box-shadow: 0 0 0 2px #3d8bfd;
+    }
+    #colorBanner .pill.opp-B {
+      background: #1a1a1a; color: #eee; border: 1px solid #555;
+    }
+    #colorBanner .pill.opp-W {
+      background: #f5f0e6; color: #1a1a1a; border: 1px solid #bbb;
+    }
+    #colorBanner .vs { color: var(--muted); font-size: 0.8rem; }
+    #colorBanner .turn-line {
+      width: 100%; margin: 0; font-size: 0.9rem;
+    }
+    #colorBanner .turn-line.yours { color: #86efac; font-weight: 600; }
+    #colorBanner .turn-line.theirs { color: #fcd34d; font-weight: 600; }
+    #colorBanner .turn-line.over { color: var(--muted); }
     /* Square / grid boards (certificate, non-hex) */
     #board { border-collapse: collapse; user-select: none; margin: 0 auto; }
     #board td {
@@ -201,6 +231,12 @@
       </p>
     </aside>
     <div id="play">
+      <div id="colorBanner">
+        <span class="pill you-W" id="pillYou">You: White</span>
+        <span class="vs">vs</span>
+        <span class="pill opp-B" id="pillOpp">Opponent: Black (QBF)</span>
+        <p class="turn-line yours" id="turnLine">Your turn — play as White</p>
+      </div>
       <div class="status-bar">
         <span>Mode: <strong id="stMode">—</strong></span>
         <span>Status: <strong id="status">—</strong></span>

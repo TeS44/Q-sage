@@ -302,11 +302,18 @@ function renderHexSvg(cells) {
     poly.dataset.pos = p;
     poly.setAttribute("title", p);
 
-    if ((v === "open" || v === "-") && !state.finished && !busy) {
+    const canClick =
+      (v === "open" || v === "-") &&
+      !state.finished &&
+      !busy &&
+      state.your_turn !== false;
+    if (canClick) {
       poly.style.cursor = "pointer";
       poly.addEventListener("click", () => onCell(p));
     } else if (busy && (v === "open" || v === "-")) {
       poly.style.cursor = "wait";
+    } else if ((v === "open" || v === "-") && state.your_turn === false) {
+      poly.style.cursor = "not-allowed";
     }
     svg.appendChild(poly);
 
@@ -440,8 +447,51 @@ function renderSquareBoard(cells) {
   }
 }
 
+function updateColorBanner() {
+  const you = $("pillYou");
+  const opp = $("pillOpp");
+  const turn = $("turnLine");
+  if (!you || !opp || !turn) return;
+  if (!state) {
+    you.textContent = "You: —";
+    opp.textContent = "Opponent: —";
+    turn.textContent = "Load an instance to play";
+    turn.className = "turn-line";
+    return;
+  }
+  const youAre = state.you_are || (state.human_color === "B" ? "Black" : "White");
+  const oppAre = state.opponent_is || (state.ai_color === "W" ? "White" : "Black");
+  const eng = state.opponent_engine || state.play_mode || "engine";
+  you.className = "pill " + (youAre === "Black" ? "you-B" : "you-W");
+  opp.className = "pill " + (oppAre === "Black" ? "opp-B" : "opp-W");
+  you.textContent = `You: ${youAre}`;
+  opp.textContent = `Opponent: ${oppAre} (${eng})`;
+
+  if (busy) {
+    turn.className = "turn-line theirs";
+    turn.textContent = `Wait — ${oppAre} (${eng}) is moving…`;
+  } else if (state.finished) {
+    turn.className = "turn-line over";
+    turn.textContent = state.winner
+      ? `Game over — ${state.winner}`
+      : "Game over";
+  } else if (state.your_turn) {
+    turn.className = "turn-line yours";
+    turn.textContent =
+      state.turn_hint || `Your turn — click an empty cell to play as ${youAre}`;
+  } else {
+    turn.className = "turn-line theirs";
+    turn.textContent =
+      state.turn_hint ||
+      `Opponent’s turn — ${oppAre}. Use “AI / strategy move” if needed.`;
+  }
+}
+
 function render() {
-  if (!state) return;
+  if (!state) {
+    updateColorBanner();
+    return;
+  }
   $("stMode").textContent = state.play_mode || playMode;
   $("status").textContent = busy
     ? "Waiting for solver…"
@@ -450,14 +500,17 @@ function render() {
         ? `Over — ${state.winner}`
         : "Game over"
       : "Playing";
+  const toMoveLabel =
+    state.to_move === "B" ? "Black" : state.to_move === "W" ? "White" : state.to_move;
   $("tomove").textContent = busy
     ? "—"
     : state.finished
       ? "—"
-      : state.to_move;
+      : toMoveLabel + (state.your_turn ? " (you)" : " (opponent)");
   $("depth").textContent = state.depth_bound ?? "—";
   $("moves").textContent = state.moves_played ?? "—";
   $("msg").textContent = state.message || "";
+  updateColorBanner();
 
   const cells = state.cells || {};
   if (state.kind === "hex" && Object.keys(cells).length) {
@@ -494,8 +547,30 @@ async function loadGame() {
   try {
     state = await api("/api/new?" + q);
     log(`Loaded [${mode}] ${p.label}`);
+    log(
+      `You are ${state.you_are || "White"} · opponent ${state.opponent_is || "Black"} (${state.opponent_engine || mode})`
+    );
+    // Opening: Black (AI) moves first on Hex — play it before the human
+    if (state.needs_ai_move && kind === "hex") {
+      setBusy(true, "QuBi running — Black opens");
+      log("Black (opponent) opens…");
+      state = await api("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session: state.session,
+          mode: mode === "hybrid" ? "hybrid" : mode === "random" ? "random" : "qbf",
+          timeout: 3,
+        }),
+      });
+      if (state.last_ai) {
+        log(
+          `Black opens → ${state.last_ai.position} (${state.last_ai.mode}) · your turn as White`
+        );
+      }
+    }
     if (mode === "certificate") {
-      log("Click “AI / strategy move” for Black, then click a cell for White.");
+      log("Black (certificate) first: click “AI / strategy move”, then play White.");
     }
   } catch (e) {
     log("Load: " + e.message);
@@ -507,7 +582,14 @@ async function loadGame() {
 
 async function onCell(pos) {
   if (!state || busy) return;
-  // Prefer opponent that needs a solver reply
+  // Only human’s colour may click
+  if (state.your_turn === false && state.kind !== "grid") {
+    log(
+      state.turn_hint ||
+        `Not your turn — you are ${state.you_are || "White"}`
+    );
+    return;
+  }
   const opp =
     state.kind === "certificate"
       ? null
@@ -515,13 +597,15 @@ async function onCell(pos) {
         ? "hybrid"
         : playMode === "qbf"
           ? "qbf"
-          : "random";
+          : playMode === "random"
+            ? "random"
+            : "none";
 
   const waitingForSolver = opp === "qbf" || opp === "hybrid";
   setBusy(
     true,
     waitingForSolver
-      ? "QuBi running — computing Black’s reply"
+      ? "QuBi running — Black’s reply"
       : "Processing move"
   );
   try {
