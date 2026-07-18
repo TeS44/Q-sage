@@ -140,6 +140,10 @@ Max_data/*
 easy_graph_format_hex_benchmarks/*
 parsed_data/*
 solvers/*
+# Documented layout for DepQBF+QRPcert (binaries built via setup script)
+!solvers/depqbf_cert/
+solvers/depqbf_cert/*
+!solvers/depqbf_cert/README.md
 tools/*
 first_analysis_dir/*
 first_iter_full_run_data/*

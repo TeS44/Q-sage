@@ -78,9 +78,11 @@ All items below are open on GitHub: [TeS44/Q-sage issues](https://github.com/TeS
 - SQval: equivalence, static/dynamic/hybrid validation
 - `qsage cert hybrid --depth N` (cert prefix, DepQBF/QuAbs tail)
 - `qsage cert demo-partial` (shared-var partial strategy)
-- `qsage cert generate` (Pedant CNF; optional DepQBF+qrpcert AIGER)
+- `qsage cert generate` (Pedant CNF; DepQBF+QRPcert AIGER)
+- **DepQBF 6.03 + QRPcert 1.0.1 from official source:** `scripts/setup_depqbf_cert.sh`
+  ([lonsing/depqbf](https://github.com/lonsing/depqbf), [JKU QRPcert](https://fmv.jku.at/qrpcert/))
 
-Still open: truncated partial-AIGER export; web mid-game hybrid (#3); bundle qrpcert.
+Still open: truncated partial-AIGER export; web mid-game hybrid (#3).
 
 **Depends on:** #8 · **Feeds:** #3
 

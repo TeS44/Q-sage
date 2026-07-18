@@ -148,19 +148,40 @@ qsage cert demo-partial   # BOW_0 cert vs BOW_1 (and notes directionality)
 
 ---
 
-## DepQBF + qrpcert (full AIGER, optional install)
+## DepQBF + QRPcert (full AIGER) — build from source
 
-Legacy pipeline (`legacy/run/run_depqbf_cert.py`):
+Official sources (GPLv3) — this is the **right version** for QRP → AIGER certs:
+
+| Component | Source | Notes |
+|-----------|--------|--------|
+| **DepQBF 6.03** | [github.com/lonsing/depqbf](https://github.com/lonsing/depqbf) · [lonsing.github.io/depqbf](https://lonsing.github.io/depqbf/) | `--trace` QRP + `--qdo` partial assign |
+| **QRPcert 1.0.1** | [fmv.jku.at/qrpcert](https://fmv.jku.at/qrpcert/) (`qrpcert-1.0.1.tar.gz`) | QRP → AIGER Skolem/Herbrand |
+| **PicoSAT / Nenofex** | pulled by DepQBF `compile.sh` | DepQBF 6.x oracles |
+| **QBFcert 1.0** (optional) | [fmv.jku.at/qbfcert](https://fmv.jku.at/qbfcert/) | Linux ELF bundle of the whole toolchain |
+
+One-shot install (native on **macOS arm64** and Linux):
 
 ```bash
-depqbf --trace instance.qdimacs > trace.qrp
-qrpcert --aiger-ascii --simplify trace.qrp > certificate.aag
+bash scripts/setup_depqbf_cert.sh
+# → solvers/depqbf_cert/{depqbf,qrpcert}
 ```
 
-Place binaries under `solvers/depqbf_cert/{depqbf,qrpcert}` (or point
-`planner_path` as in the original CLI). Pedant is the default first-class
-generator in `qsage cert generate` because the binary is already under
-`solvers/pedant-solver/`.
+Pipeline (DepQBF 6.x needs the extra flags for valid traces):
+
+```bash
+depqbf --trace --dep-man=simple --no-lazy-qpup instance.qdimacs > trace.qrp
+qrpcert --aiger-ascii --simplify trace.qrp > certificate.aag
+
+# or:
+qsage cert generate --backend depqbf --qdimacs instance.qdimacs --out cert.aag
+```
+
+Legacy runner: `legacy/run/run_depqbf_cert.py` (same binary layout under
+`solvers/depqbf_cert/`). Pedant remains an alternative CNF path
+(`qsage cert generate --backend pedant`).
+
+Paper: Niemetz, Preiner, Lonsing, Seidl, Biere — *Resolution-Based Certificate
+Extraction for QBF* (SAT 2012); framework page [QBFcert](https://fmv.jku.at/qbfcert/).
 
 ---
 
@@ -170,6 +191,8 @@ generator in `qsage cert generate` because the binary is already under
 |-------|----------|
 | SQval wrappers | `qsage/strategy/sqval.py` |
 | DepQBF / Pedant cert gen | `qsage/strategy/depqbf.py` |
+| Build DepQBF+QRPcert | `scripts/setup_depqbf_cert.sh` |
+| Binaries (after setup) | `solvers/depqbf_cert/` |
 | CLI | `qsage cert …` |
 | Sample grid CNF certs | `testcases/index_general_certificates/` |
 | SQval demos (AIGER + QDIMACS) | `third_party/SQval/intermediate_files/` |
@@ -182,4 +205,3 @@ generator in `qsage cert generate` because the binary is already under
 
 - First-class **partial AIGER** export (truncate quantifier depth at generation time).
 - Web UI mid-game hybrid play (issue #3) — reuse the same hybrid_depth model.
-- Bundle or document install of `qrpcert` next to DepQBF for one-command AIGER gen.

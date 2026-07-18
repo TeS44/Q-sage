@@ -197,9 +197,13 @@ qsage cert demo-equivalence          # full-strategy transfer LN→SN (Docker on
 qsage cert demo-partial              # partial shared-var equivalence (Hein_12)
 qsage cert hybrid --depth 2 --demo   # cert opening + solver tail
 qsage cert generate --qdimacs f.qdimacs --out cert.cnf   # Pedant (Docker on Mac)
+# AIGER via DepQBF+QRPcert (build from official sources first):
+bash scripts/setup_depqbf_cert.sh
+qsage cert generate --backend depqbf --qdimacs f.qdimacs --out cert.aag
 qsage cert validate -- …             # passthrough to SQval interactive_validation.py
 ```
 
+DepQBF source: [lonsing/depqbf](https://github.com/lonsing/depqbf) · QRPcert: [fmv.jku.at/qrpcert](https://fmv.jku.at/qrpcert/)  
 Details: [`docs/CERTIFICATES.md`](docs/CERTIFICATES.md) · [SQval](https://github.com/irfansha/SQval) · [paper](https://drops.dagstuhl.de/storage/00lipics/lipics-vol271-sat2023/LIPIcs.SAT.2023.24/LIPIcs.SAT.2023.24.pdf)
 
 ### Web UI (local)

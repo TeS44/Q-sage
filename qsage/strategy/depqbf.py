@@ -207,6 +207,30 @@ def generate_certificate_pedant(
     )
 
 
+# DepQBF 6.x needs these for QRP traces usable by QRPcert (see upstream README):
+_TRACE_FLAGS = ("--trace", "--dep-man=simple", "--no-lazy-qpup")
+
+
+def _binary_is_native(path: Path) -> bool:
+    """True if the binary looks runnable on this host (not foreign ELF on Mac)."""
+    if not path.is_file():
+        return False
+    try:
+        raw = path.read_bytes()[:8]
+        # Mach-O 64-bit LE / fat magic on macOS
+        if sys.platform == "darwin":
+            return raw[:4] in (
+                b"\xcf\xfa\xed\xfe",
+                b"\xce\xfa\xed\xfe",
+                b"\xca\xfe\xba\xbe",
+            )
+        if sys.platform.startswith("linux"):
+            return raw[:4] == b"\x7fELF"
+        return True
+    except OSError:
+        return False
+
+
 def generate_certificate_depqbf_qrp(
     qdimacs: str | Path,
     out: str | Path,
@@ -214,9 +238,13 @@ def generate_certificate_depqbf_qrp(
     timeout: int = 300,
 ) -> CertGenResult:
     """
-    Full AIGER via DepQBF ``--trace`` + qrpcert (optional binaries).
+    Full AIGER via DepQBF ``--trace`` + QRPcert (``qrpcert``).
 
-    Expects ``solvers/depqbf_cert/{depqbf,qrpcert}``.
+    Install with::
+
+        bash scripts/setup_depqbf_cert.sh
+
+    Sources: https://github.com/lonsing/depqbf · https://fmv.jku.at/qrpcert/
     """
     qdimacs = Path(qdimacs).resolve()
     out = Path(out).resolve()
@@ -225,9 +253,10 @@ def generate_certificate_depqbf_qrp(
             False,
             None,
             None,
-            "DepQBF+qrpcert not installed under solvers/depqbf_cert/. "
-            "Use `qsage cert generate` with Pedant, or install depqbf_cert "
-            "(see docs/CERTIFICATES.md).",
+            "DepQBF+qrpcert not under solvers/depqbf_cert/. "
+            "Run: bash scripts/setup_depqbf_cert.sh\n"
+            "Sources: https://github.com/lonsing/depqbf · "
+            "https://fmv.jku.at/qrpcert/qrpcert-1.0.1.tar.gz",
         )
     if not qdimacs.is_file():
         return CertGenResult(False, None, None, f"missing qdimacs: {qdimacs}")
@@ -237,37 +266,21 @@ def generate_certificate_depqbf_qrp(
     trace = work / "depqbf_qrp_trace.qrp"
     depqbf = _DEPQBF_CERT_DIR / "depqbf"
     qrpcert = _DEPQBF_CERT_DIR / "qrpcert"
+    out.parent.mkdir(parents=True, exist_ok=True)
 
-    def _run_local() -> subprocess.CompletedProcess[str]:
-        with open(trace, "w", encoding="utf-8") as tf:
-            p1 = subprocess.run(
-                [str(depqbf), "--trace", str(qdimacs)],
-                stdout=tf,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=timeout,
-            )
-        p2 = subprocess.run(
-            f"{qrpcert} --aiger-ascii --simplify {trace} > {out}",
-            shell=True,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        raw = (p1.stderr or "") + (p2.stdout or "") + (p2.stderr or "")
-        return subprocess.CompletedProcess(
-            args=[], returncode=p2.returncode, stdout=raw, stderr=""
-        )
+    use_native = _binary_is_native(depqbf) and _binary_is_native(qrpcert)
+    use_docker = (not use_native) and _docker_ok()
 
-    if _needs_linux_elf() and not _docker_ok():
+    if not use_native and not use_docker:
         return CertGenResult(
             False,
             None,
             None,
-            "depqbf_cert binaries are Linux ELF; need Docker or Linux/WSL",
+            "depqbf_cert binaries are not native on this host and Docker is "
+            "unavailable. Rebuild: bash scripts/setup_depqbf_cert.sh",
         )
 
-    if _needs_linux_elf() and _docker_ok():
+    if use_docker:
         try:
             rel_q = qdimacs.relative_to(_REPO)
             rel_out = out.relative_to(_REPO)
@@ -278,9 +291,10 @@ def generate_certificate_depqbf_qrp(
                 None,
                 "for Docker, qdimacs and --out must live under the repo root",
             )
+        flags = " ".join(_TRACE_FLAGS)
         inner = (
             "chmod +x solvers/depqbf_cert/depqbf solvers/depqbf_cert/qrpcert; "
-            f"./solvers/depqbf_cert/depqbf --trace /work/{rel_q} "
+            f"./solvers/depqbf_cert/depqbf {flags} /work/{rel_q} "
             f"> intermediate_files/depqbf_qrp_trace.qrp; "
             "./solvers/depqbf_cert/qrpcert --aiger-ascii --simplify "
             f"intermediate_files/depqbf_qrp_trace.qrp > /work/{rel_out}"
@@ -307,8 +321,23 @@ def generate_certificate_depqbf_qrp(
         )
         raw = (proc.stdout or "") + (proc.stderr or "")
     else:
-        proc = _run_local()
-        raw = proc.stdout or ""
+        with open(trace, "w", encoding="utf-8") as tf:
+            p1 = subprocess.run(
+                [str(depqbf), *_TRACE_FLAGS, str(qdimacs)],
+                stdout=tf,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=timeout,
+            )
+        with open(out, "w", encoding="utf-8") as of:
+            p2 = subprocess.run(
+                [str(qrpcert), "--aiger-ascii", "--simplify", str(trace)],
+                stdout=of,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=max(60, timeout // 2),
+            )
+        raw = (p1.stderr or "") + (p2.stderr or "")
 
     sat: bool | None = None
     if trace.is_file():
