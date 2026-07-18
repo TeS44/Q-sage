@@ -221,11 +221,39 @@ def public_hex(sess: dict) -> dict:
             "right": "last letter column",
             "goal": "White blocks Black; White edges shown light",
         },
+        "legal_actions": legal_actions_hex(sess, sess["to_move"])
+        if not sess["finished"]
+        else [],
+        "your_legal_actions": legal_actions_hex(sess, human)
+        if your_turn
+        else [],
+        "action_help": "Hex: click one empty cell to place your White stone.",
     }
 
 
 def open_cells(sess: dict) -> list[str]:
     return [p for p, v in sess["cells"].items() if v == "open"]
+
+
+def legal_actions_hex(sess: dict, color: str | None = None) -> list[dict]:
+    """Open cells as single-stone occupy actions."""
+    color = color or sess.get("to_move") or "W"
+    if sess.get("finished") or sess.get("to_move") != color:
+        # still list human legal when it's their turn only for "your" list
+        pass
+    if sess.get("finished"):
+        return []
+    if sess.get("to_move") != color:
+        return []
+    return [
+        {
+            "anchor": p,
+            "cells": [p],
+            "label": f"play {p}",
+            "description": f"Place {'Black' if color == 'B' else 'White'} on {p}",
+        }
+        for p in sorted(open_cells(sess))
+    ]
 
 
 def black_winning_path(sess: dict) -> list[str] | None:

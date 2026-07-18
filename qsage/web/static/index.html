@@ -123,6 +123,24 @@
     #gridSvg .point { fill: #3d3220; }
     #gridSvg .cell-hit { fill: transparent; cursor: pointer; }
     #gridSvg .cell-hit:hover { fill: rgba(61,139,253,0.18); }
+    #gridSvg .cell-hit.preview {
+      fill: rgba(61, 139, 253, 0.35);
+      stroke: #3d8bfd; stroke-width: 2;
+    }
+    #gridSvg .cell-hit.preview-pair {
+      fill: rgba(250, 200, 80, 0.4);
+      stroke: #f5a524; stroke-width: 2;
+    }
+    #legalMoves .act {
+      text-align: left; width: 100%;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text);
+      border-radius: 6px; padding: 0.35rem 0.5rem; font-size: 0.8rem; cursor: pointer;
+      margin: 0;
+    }
+    #legalMoves .act:hover, #legalMoves .act.hot {
+      border-color: #f5a524; background: #2a2418;
+    }
+    #legalMoves .act .cells { color: var(--muted); font-size: 0.72rem; }
     #gridSvg .stone-B { fill: #1a1a1a; stroke: #444; stroke-width: 1.5; }
     #gridSvg .stone-W { fill: #faf8f5; stroke: #3d8bfd; stroke-width: 2.5; }
     #gridSvg .stone-label {
@@ -268,7 +286,14 @@
         <p class="hint" id="modeHint">QBF: QuBi answers / guides moves. Hybrid: opening book then QBF.</p>
       </div>
       <div class="section">
-        <h2>4 · Play</h2>
+        <h2>4 · Legal moves (your turn)</h2>
+        <p class="hint" id="actionHelp">Load a game to see possible actions.</p>
+        <div class="instances" id="legalMoves" style="max-height:160px">
+          <span class="hint">—</span>
+        </div>
+      </div>
+      <div class="section">
+        <h2>5 · Play</h2>
         <button class="action primary" id="btnLoad">Load instance</button>
         <button class="action hybrid" id="btnAi">AI / strategy move</button>
         <div class="row2">

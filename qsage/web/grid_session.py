@@ -215,6 +215,18 @@ def public_grid(sess: dict) -> dict:
             and sess["to_move"] == ai
         ),
         "positions": list(sess["cells"].keys()),
+        "legal_actions": legal_actions_for(
+            sess, sess["to_move"] if not sess["finished"] else human
+        ),
+        "your_legal_actions": legal_actions_for(sess, human)
+        if your_turn
+        else [],
+        "action_help": (
+            "Domineering: click the lower (Black) or left (White) cell of a 2-cell bar; "
+            "both cells fill."
+            if sess.get("style") == "domineering"
+            else "Click any open cell to place your stone."
+        ),
     }
 
 
@@ -229,25 +241,58 @@ def _in_board(sess: dict, x: int, y: int) -> bool:
 
 def legal_cells_for(sess: dict, color: str) -> list[str]:
     """Cells the player can click (anchor for multi-cell moves)."""
+    return [a["anchor"] for a in legal_actions_for(sess, color)]
+
+
+def legal_actions_for(sess: dict, color: str) -> list[dict]:
+    """
+    List of legal actions for the side panel and hover previews.
+
+    Each action: {anchor, cells, label, description}
+    """
     style = sess.get("style") or "occupy"
     w, h = sess["width"], sess["height"]
-    out = []
+    out: list[dict] = []
     if style == "domineering":
         if color == "B":
-            # vertical: (x,y) and (x,y+1) open
             for x in range(1, w + 1):
                 for y in range(1, h):
                     if _open(sess, x, y) and _open(sess, x, y + 1):
-                        out.append(_xy_to_label(x, y))
+                        a = _xy_to_label(x, y)
+                        b = _xy_to_label(x, y + 1)
+                        out.append(
+                            {
+                                "anchor": a,
+                                "cells": [a, b],
+                                "label": f"vertical {a}+{b}",
+                                "description": f"Black vertical diomino covering {a} and {b}",
+                            }
+                        )
         else:
-            # horizontal: (x,y) and (x+1,y)
             for x in range(1, w):
                 for y in range(1, h + 1):
                     if _open(sess, x, y) and _open(sess, x + 1, y):
-                        out.append(_xy_to_label(x, y))
+                        a = _xy_to_label(x, y)
+                        b = _xy_to_label(x + 1, y)
+                        out.append(
+                            {
+                                "anchor": a,
+                                "cells": [a, b],
+                                "label": f"horizontal {a}+{b}",
+                                "description": f"White horizontal diomino covering {a} and {b}",
+                            }
+                        )
     else:
-        # occupy / complex fallback: any open cell
-        out = [p for p, v in sess["cells"].items() if v == "open"]
+        for p, v in sorted(sess["cells"].items()):
+            if v == "open":
+                out.append(
+                    {
+                        "anchor": p,
+                        "cells": [p],
+                        "label": f"occupy {p}",
+                        "description": f"Place stone on {p}",
+                    }
+                )
     return out
 
 

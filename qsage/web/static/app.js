@@ -568,19 +568,40 @@ function renderGridSvg(cells) {
       hit.setAttribute("class", "cell-hit");
       hit.dataset.pos = lab;
       hit.setAttribute("title", lab);
+      // Legal anchors for hover pair-highlight (domineering)
+      const yourActs = state.your_legal_actions || [];
+      const actByAnchor = Object.fromEntries(
+        yourActs.map((a) => [a.anchor, a])
+      );
+      const isAnchor = lab in actByAnchor;
       const canClick =
-        (v === "open" || v === "-") &&
+        isAnchor &&
         !state.finished &&
         !busy &&
         state.your_turn !== false;
       if (canClick) {
         hit.style.cursor = "pointer";
         hit.addEventListener("click", () => onCell(lab));
+        hit.addEventListener("mouseenter", () => {
+          const a = actByAnchor[lab];
+          setPreview(a.cells || [lab], lab);
+        });
+        hit.addEventListener("mouseleave", () => clearPreview());
       } else if (busy) {
         hit.style.cursor = "wait";
       } else {
         hit.style.cursor = "default";
-        hit.style.pointerEvents = "none";
+        // still allow hover if this cell is part of some legal action's pair
+        const partOf = yourActs.find((a) => (a.cells || []).includes(lab));
+        if (partOf && state.your_turn) {
+          hit.style.pointerEvents = "auto";
+          hit.addEventListener("mouseenter", () =>
+            setPreview(partOf.cells, partOf.anchor)
+          );
+          hit.addEventListener("mouseleave", () => clearPreview());
+        } else {
+          hit.style.pointerEvents = "none";
+        }
       }
       gridSvg.appendChild(hit);
 
@@ -704,6 +725,93 @@ function renderSquareBoard(cells) {
   }
 }
 
+/** Highlight domineering pair / hex cell on hover from legal-move list or board */
+let previewCells = [];
+
+function clearPreview() {
+  previewCells = [];
+  document.querySelectorAll("#gridSvg .cell-hit.preview, #gridSvg .cell-hit.preview-pair")
+    .forEach((el) => {
+      el.classList.remove("preview", "preview-pair");
+    });
+  document.querySelectorAll("#hexSvg .hex-cell.preview").forEach((el) => {
+    el.classList.remove("preview");
+    el.style.filter = "";
+  });
+  document.querySelectorAll("#legalMoves .act.hot").forEach((el) => {
+    el.classList.remove("hot");
+  });
+}
+
+function setPreview(cells, anchor) {
+  clearPreview();
+  previewCells = cells || [];
+  if (!previewCells.length) return;
+  // grid SVG rects
+  for (const lab of previewCells) {
+    const el = document.querySelector(`#gridSvg .cell-hit[data-pos="${lab}"]`);
+    if (el) {
+      el.classList.add(lab === anchor ? "preview" : "preview-pair");
+    }
+  }
+  // hex polygons
+  for (const lab of previewCells) {
+    const el = document.querySelector(`#hexSvg .hex-cell[data-pos="${lab}"]`);
+    if (el) {
+      el.classList.add("preview");
+      el.style.filter = "brightness(1.25)";
+      el.style.stroke = "#f5a524";
+      el.style.strokeWidth = "3";
+    }
+  }
+  document.querySelectorAll("#legalMoves .act").forEach((btn) => {
+    if (btn.dataset.anchor === anchor) btn.classList.add("hot");
+  });
+}
+
+function renderLegalMoves() {
+  const box = $("legalMoves");
+  const help = $("actionHelp");
+  if (!box) return;
+  if (!state) {
+    box.innerHTML = '<span class="hint">—</span>';
+    if (help) help.textContent = "Load a game to see possible actions.";
+    return;
+  }
+  if (help) {
+    help.textContent =
+      state.action_help ||
+      (state.your_turn
+        ? "Click a listed action or a highlighted cell."
+        : "Wait for the opponent.");
+  }
+  const acts = state.your_legal_actions || state.legal_actions || [];
+  if (!state.your_turn) {
+    box.innerHTML =
+      '<span class="hint">Not your turn — no actions for you right now.</span>';
+    return;
+  }
+  if (!acts.length) {
+    box.innerHTML = '<span class="hint">No legal moves (game may be over).</span>';
+    return;
+  }
+  box.innerHTML = "";
+  for (const a of acts) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "act";
+    b.dataset.anchor = a.anchor;
+    b.innerHTML = `${a.label}<div class="cells">${(a.cells || []).join(" · ")}</div>`;
+    b.title = a.description || a.label;
+    b.onmouseenter = () => setPreview(a.cells || [a.anchor], a.anchor);
+    b.onmouseleave = () => clearPreview();
+    b.onclick = () => {
+      if (!busy) onCell(a.anchor);
+    };
+    box.appendChild(b);
+  }
+}
+
 function updateColorBanner() {
   const you = $("pillYou");
   const opp = $("pillOpp");
@@ -791,6 +899,7 @@ function render() {
       "Depth = total half-moves (plies). Example: depth 5, Black first → Black 3 moves, you (White) 2.";
   }
   updateColorBanner();
+  renderLegalMoves();
 
   const cells = state.cells || {};
   if (state.kind === "hex" && Object.keys(cells).length) {
@@ -799,6 +908,11 @@ function render() {
     renderSquareBoard(cells);
   } else {
     renderSquareBoard({});
+  }
+  // re-apply hover if any
+  if (previewCells.length) {
+    const a = previewCells[0];
+    setPreview(previewCells, a);
   }
 }
 
