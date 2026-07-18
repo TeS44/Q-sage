@@ -143,6 +143,18 @@
     #legalMoves .act .cells { color: var(--muted); font-size: 0.72rem; }
     #gridSvg .stone-B { fill: #1a1a1a; stroke: #444; stroke-width: 1.5; }
     #gridSvg .stone-W { fill: #faf8f5; stroke: #3d8bfd; stroke-width: 2.5; }
+    #gridSvg .stone-win-B { stroke: #22c55e; stroke-width: 3.5; }
+    #gridSvg .stone-win-W { stroke: #2563eb; stroke-width: 3.5; }
+    #gridSvg .cell-hit.win-cell-B { fill: rgba(34,197,94,0.22); }
+    #gridSvg .cell-hit.win-cell-W { fill: rgba(37,99,235,0.22); }
+    #gridSvg .grid-win-path-B {
+      fill: none; stroke: #22c55e; stroke-width: 6; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.9; pointer-events: none;
+    }
+    #gridSvg .grid-win-path-W {
+      fill: none; stroke: #2563eb; stroke-width: 6; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.9; pointer-events: none;
+    }
     #gridSvg .stone-label {
       font-size: 12px; font-weight: 700; text-anchor: middle;
       dominant-baseline: central; pointer-events: none; font-family: system-ui, sans-serif;
@@ -154,77 +166,56 @@
       dominant-baseline: central; font-family: system-ui, sans-serif;
     }
 
-    /* Little-Golem-style Hex (SVG) */
+    /* Hex board — clean honeycomb */
     #board-wrap {
       display: flex; justify-content: center; align-items: center;
-      padding: 0.5rem; min-height: 200px;
-      background: linear-gradient(145deg, #1a2332 0%, #121820 100%);
+      padding: 0.75rem; min-height: 200px;
+      background: #161d28;
       border-radius: 12px; border: 1px solid var(--border);
     }
     #hexSvg { display: block; max-width: 100%; height: auto; user-select: none; }
-    #hexSvg .hex-cell { stroke: #3d4f66; stroke-width: 1.2; cursor: default; transition: filter 0.1s; }
-    #hexSvg .hex-cell.open { fill: #c4a574; cursor: pointer; }
-    #hexSvg .hex-cell.open:hover { filter: brightness(1.12); stroke: #fff; stroke-width: 2; }
-    #hexSvg .hex-cell.B { fill: #1a1a1a; stroke: #444; }
-    #hexSvg .hex-cell.W { fill: #f5f0e6; stroke: #bbb; }
-    #hexSvg .hex-label {
-      font-size: 11px; font-weight: 600; pointer-events: none;
-      text-anchor: middle; dominant-baseline: central;
-      fill: #5a4a32; font-family: system-ui, sans-serif;
+    #hexSvg .hex-page { fill: #f3efe6; }
+    #hexSvg .hex-mat { fill: #c4a574; stroke: none; }
+    #hexSvg .hex-cell {
+      fill: #dfc49a;
+      stroke: #8b7355;
+      stroke-width: 1;
+      cursor: default;
     }
-    #hexSvg .hex-label.onB { fill: #ccc; }
-    #hexSvg .hex-label.onW { fill: #333; }
-    /* High-contrast goal borders (readable on dark UI) */
-    #hexSvg .edge-black-glow {
-      fill: none; stroke: #fbbf24; stroke-width: 22; stroke-linecap: round;
-      stroke-linejoin: round; opacity: 0.55;
+    #hexSvg .hex-cell.open { cursor: pointer; }
+    #hexSvg .hex-cell.open:hover { fill: #ead4ab; stroke: #5c4a32; stroke-width: 1.5; }
+    #hexSvg .hex-cell.filled { fill: #dfc49a; }
+    /* Thin goal rails (LG black / red) */
+    #hexSvg .hex-rail-B {
+      fill: none; stroke: #1c1c1c; stroke-width: 9; stroke-linecap: round;
+      stroke-linejoin: round;
     }
-    #hexSvg .edge-black {
-      fill: none; stroke: #111; stroke-width: 12; stroke-linecap: round;
-      stroke-linejoin: round; opacity: 1;
+    #hexSvg .hex-rail-W {
+      fill: none; stroke: #f5f0e6; stroke-width: 9; stroke-linecap: round;
+      stroke-linejoin: round;
+      /* dark outline so white rail stays visible on cream mat */
+      filter: drop-shadow(0 0 0.6px #5c5346) drop-shadow(0 0 0.6px #5c5346);
     }
-    #hexSvg .edge-black-inner {
-      fill: none; stroke: #fbbf24; stroke-width: 3; stroke-linecap: round;
-      stroke-linejoin: round; opacity: 1;
+    #hexSvg .hex-stone-B {
+      fill: #1a1a1a; stroke: #333; stroke-width: 1;
     }
-    #hexSvg .edge-white-glow {
-      fill: none; stroke: #38bdf8; stroke-width: 22; stroke-linecap: round;
-      stroke-linejoin: round; opacity: 0.5;
+    #hexSvg .hex-stone-W {
+      fill: #faf7f2; stroke: #9a9080; stroke-width: 1;
     }
-    #hexSvg .edge-white {
-      fill: none; stroke: #f8fafc; stroke-width: 12; stroke-linecap: round;
-      stroke-linejoin: round; opacity: 1;
-    }
-    #hexSvg .edge-white-inner {
-      fill: none; stroke: #0ea5e9; stroke-width: 3; stroke-linecap: round;
-      stroke-linejoin: round; opacity: 1;
-    }
-    #hexSvg .edge-badge {
-      font-size: 12px; font-weight: 800; font-family: system-ui, sans-serif;
-      pointer-events: none; text-anchor: middle; dominant-baseline: central;
-    }
-    #hexSvg .edge-badge-bg-B { fill: #fbbf24; stroke: #111; stroke-width: 1.5; }
-    #hexSvg .edge-badge-bg-W { fill: #e0f2fe; stroke: #0369a1; stroke-width: 1.5; }
-    #hexSvg .edge-badge-text-B { fill: #111; }
-    #hexSvg .edge-badge-text-W { fill: #0c4a6e; }
     #hexSvg .win-path {
-      fill: none; stroke: #22c55e; stroke-width: 8; stroke-linecap: round;
-      stroke-linejoin: round; opacity: 0.95;
-      filter: drop-shadow(0 0 4px #22c55e);
+      fill: none; stroke: #2d9f5f; stroke-width: 5; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.9; pointer-events: none;
     }
-    #hexSvg .hex-cell.on-path { stroke: #22c55e; stroke-width: 3; }
-    /* Border cells: strong colored outline */
-    #hexSvg .hex-cell.border-B {
-      stroke: #fbbf24; stroke-width: 3.5;
-      filter: drop-shadow(0 0 3px #fbbf24);
+    #hexSvg .win-path-W {
+      fill: none; stroke: #2b6cb0; stroke-width: 5; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.9; pointer-events: none;
     }
-    #hexSvg .hex-cell.border-W {
-      stroke: #38bdf8; stroke-width: 3.5;
-      filter: drop-shadow(0 0 3px #38bdf8);
-    }
-    #hexSvg .coord {
-      font-size: 12px; fill: var(--muted); font-family: system-ui, sans-serif;
-      text-anchor: middle; dominant-baseline: central;
+    #hexSvg .hex-cell.on-path { stroke: #2d9f5f; stroke-width: 2; }
+    #hexSvg .hex-cell.on-path-W { stroke: #2b6cb0; stroke-width: 2; }
+    #hexSvg .hex-coord {
+      font-size: 11px; fill: #6b7280; font-family: system-ui, sans-serif;
+      font-weight: 600; text-anchor: middle; dominant-baseline: central;
+      pointer-events: none;
     }
     #board-wrap.busy { opacity: 0.55; pointer-events: none; cursor: wait; }
     #board-wrap.busy .hex-cell.open { cursor: wait; }
@@ -373,11 +364,10 @@
         <svg id="gridSvg" style="display:none" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
       <p class="hint" id="hexLegend" style="display:none">
-        <span style="background:#fbbf24;color:#111;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700">BLACK</span>
-        gold edges = borders Black must connect.
-        <span style="background:#e0f2fe;color:#0c4a6e;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700">WHITE</span>
-        blue edges = White sides (you block).
-        <span style="color:#22c55e;font-weight:700">Green path</span> = Black has won.
+        <b style="color:#fff;background:#1c1c1c;padding:0 0.35rem;border-radius:3px">Black</b>
+        must connect the dark edges within the depth bound ·
+        <b style="color:#1c1c1c;background:#f5f0e6;border:1px solid #999;padding:0 0.35rem;border-radius:3px">White</b>
+        edges are yours — you win by blocking Black (not by “connecting” early).
       </p>
       <div class="hint" id="msg"></div>
       <div id="log"></div>

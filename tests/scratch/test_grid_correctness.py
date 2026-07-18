@@ -1,4 +1,6 @@
-"""Semantic tests for scratch grid occupy encoding."""
+"""
+Semantic tests for scratch grid — always dual-check vs previous ``bwnib``.
+"""
 
 from __future__ import annotations
 
@@ -8,52 +10,28 @@ import pytest
 
 from qsage.scratch.grid import encode_grid_files
 from qsage.scratch.parse_bddl import load_grid_problem
+from qsage.solve.qubi import qubi_available
+
+from tests.scratch.conftest_oracle import (
+    assert_scratch_matches_prev,
+    solve_scratch_and_prev_grid,
+)
 
 REPO = Path(__file__).resolve().parents[2]
-HTTT = REPO / "Benchmarks" / "SAT2023_GDDL" / "GDDL_models" / "httt"
+MODELS = REPO / "Benchmarks" / "SAT2023_GDDL" / "GDDL_models"
+HTTT = MODELS / "httt"
 DOMAIN = HTTT / "domain.ig"
-QUBI = REPO / "solvers" / "qubi" / "qubi"
 
-# Small instances with known paper Table 2 style answers (bwnib / QuBi).
-# These are used as *semantic* targets for scratch occupy encoding.
-# If scratch model differs slightly, document and adjust — start with ones we
-# can also cross-check by hand.
-GRID_SMOKE = [
-    "3x3_3_domino.ig",
-    "3x3_9_tic.ig",
+# (domain_folder, problem_stem) — always vs bwnib
+GRID_DUAL = [
+    ("httt", "3x3_3_domino"),
+    ("httt", "3x3_9_tic"),
+    ("httt", "3x3_5_el"),
+    ("connect-c", "2x2_3_connect2"),
+    ("connect-c", "3x3_3_connect2"),
+    ("domineering", "2x2_2"),
+    ("breakthrough", "2x4_13"),
 ]
-
-
-def _qubi_available() -> bool:
-    return QUBI.is_file()
-
-
-def _solve(qcir: str, timeout: int = 120) -> str:
-    import subprocess
-    import tempfile
-
-    with tempfile.NamedTemporaryFile("w", suffix=".qcir", delete=False) as f:
-        f.write(qcir)
-        path = f.name
-    try:
-        proc = subprocess.run(
-            [str(QUBI), "-v=0", "-w=1", path],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-    except subprocess.TimeoutExpired:
-        return "TIMEOUT"
-    raw = ((proc.stdout or "") + (proc.stderr or "")).upper()
-    if "RESULT: TRUE" in raw:
-        return "SAT"
-    if "RESULT: FALSE" in raw:
-        return "UNSAT"
-    if "TRUE" in raw and "FALSE" not in raw:
-        return "SAT"
-    if "FALSE" in raw:
-        return "UNSAT"
-    return "UNKNOWN"
 
 
 @pytest.mark.skipif(not DOMAIN.is_file(), reason="no httt domain")
@@ -68,42 +46,20 @@ def test_encode_grid_qcir_shape() -> None:
     assert p.black_goals
 
 
-@pytest.mark.skipif(not _qubi_available(), reason="QuBi not built")
-@pytest.mark.skipif(not DOMAIN.is_file(), reason="no httt")
-@pytest.mark.parametrize("name", GRID_SMOKE)
-def test_grid_solves_without_crash(name: str) -> None:
-    """Encoding must be well-formed; result is SAT or UNSAT (not UNKNOWN)."""
-    prob = HTTT / name
-    if not prob.is_file():
-        pytest.skip("missing")
-    got = _solve(encode_grid_files(DOMAIN, prob), timeout=180)
-    assert got in ("SAT", "UNSAT"), got
-
-
-@pytest.mark.skipif(not _qubi_available(), reason="QuBi not built")
-@pytest.mark.xfail(reason="scratch grid experimental", strict=False)
-def test_grid_vs_legacy_bwnib_answer_when_available() -> None:
-    """
-    Cross-check scratch vs current qsage.encode bwnib (semantic, not QCIR).
-    Only on a tiny instance so both finish quickly.
-    """
-    from qsage.encode.bwnib import encode_bwnib
-    from qsage.solve.qubi import qubi_available, solve_qcir_qubi
-    from qsage.solve.result import Status
-
-    if not qubi_available():
-        pytest.skip("qubi")
-    prob = HTTT / "3x3_3_domino.ig"
-    if not prob.is_file() or not DOMAIN.is_file():
-        pytest.skip("files")
-
-    scratch = encode_grid_files(DOMAIN, prob)
-    legacy = encode_bwnib(DOMAIN, prob)
-    s_res = _solve(scratch, timeout=180)
-    l_res = solve_qcir_qubi(legacy, timeout=180)
-    if l_res.status not in (Status.SAT, Status.UNSAT):
-        pytest.skip(f"legacy unclear: {l_res}")
-    legacy_ans = "SAT" if l_res.status is Status.SAT else "UNSAT"
-    assert s_res == legacy_ans, (
-        f"scratch={s_res} legacy_bwnib={legacy_ans} (semantic mismatch)"
+@pytest.mark.skipif(not qubi_available(), reason="QuBi not built")
+@pytest.mark.parametrize(
+    "folder,stem",
+    GRID_DUAL,
+    ids=[f"{f}/{s}" for f, s in GRID_DUAL],
+)
+def test_grid_scratch_matches_previous_bwnib(folder: str, stem: str) -> None:
+    domain = MODELS / folder / "domain.ig"
+    problem = MODELS / folder / f"{stem}.ig"
+    if not domain.is_file() or not problem.is_file():
+        pytest.skip("missing files")
+    scratch, prev = solve_scratch_and_prev_grid(
+        domain, problem, timeout=180
+    )
+    assert_scratch_matches_prev(
+        scratch, prev, label=f"{folder}/{stem}"
     )

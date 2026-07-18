@@ -117,14 +117,17 @@ def _hex_move_budget(sess: dict) -> dict:
 
 
 def public_hex(sess: dict) -> dict:
-    # Keep winning_path up to date whenever Black has connected
-    if not sess.get("winning_path"):
-        wp = black_winning_path(sess)
-        if wp:
-            sess["winning_path"] = wp
-            if not sess.get("finished"):
-                sess["finished"] = True
-                sess["winner"] = "Black"
+    # Only Black connection ends the game early (QBF Hex: existential Black).
+    # White wins only when the depth bound / board is exhausted without Black path.
+    if not sess.get("finished"):
+        bpath = black_winning_path(sess)
+        if bpath:
+            _set_winner(
+                sess,
+                "Black",
+                bpath,
+                f"Black connected borders via {' → '.join(bpath)}",
+            )
 
     mode = sess.get("play_mode") or "qbf"
     human = sess.get("human_color") or "W"
@@ -209,17 +212,25 @@ def public_hex(sess: dict) -> dict:
             and sess["to_move"] == ai
         ),
         "winning_path": list(sess.get("winning_path") or [])
-        if sess.get("finished") and sess.get("winner") == "Black"
+        if sess.get("finished") and sess.get("winning_path")
         else list(black_winning_path(sess) or []),
+        "winner_color": sess.get("winner_color")
+        or (
+            "B"
+            if (sess.get("winner") or "").startswith("Black")
+            else "W"
+            if (sess.get("winner") or "").startswith("White")
+            else None
+        ),
         "black_borders": {
             "start": list(sess.get("start_border") or []),
             "end": list(sess.get("end_border") or []),
-            "goal": "Black connects start ↔ end borders (dark edges)",
+            "goal": "Black connects start ↔ end within the depth bound",
         },
         "white_borders": {
-            "left": "first letter column (a…)",
-            "right": "last letter column",
-            "goal": "White blocks Black; White edges shown light",
+            "left": white_border_sets(sess)[0],
+            "right": white_border_sets(sess)[1],
+            "goal": "White blocks Black (wins only if Black never connects in-bound)",
         },
         "legal_actions": legal_actions_hex(sess, sess["to_move"])
         if not sess["finished"]
@@ -256,16 +267,28 @@ def legal_actions_hex(sess: dict, color: str | None = None) -> list[dict]:
     ]
 
 
-def black_winning_path(sess: dict) -> list[str] | None:
-    """
-    Shortest Black path from start_border to end_border (cell labels), or None.
-    """
-    owned = {p for p, v in sess["cells"].items() if v == "B"}
-    starts = [p for p in (sess.get("start_border") or []) if p in owned]
-    ends = {p for p in (sess.get("end_border") or []) if p in owned}
+def _letter_col(pos: str) -> int:
+    """a→0, b→1, … (first contiguous letter run)."""
+    i = 0
+    while i < len(pos) and pos[i].isalpha():
+        i += 1
+    letters = pos[:i].lower()
+    n = 0
+    for ch in letters:
+        n = n * 26 + (ord(ch) - 96)
+    return n - 1  # 0-based
+
+
+def _bfs_path(
+    owned: set[str],
+    starts: list[str],
+    ends: set[str],
+    neigh: dict,
+) -> list[str] | None:
+    starts = [s for s in starts if s in owned]
+    ends = {e for e in ends if e in owned}
     if not starts or not ends:
         return None
-    neigh = sess.get("neighbours") or {}
     parent: dict[str, str | None] = {s: None for s in starts}
     queue = list(starts)
     found: str | None = None
@@ -280,7 +303,7 @@ def black_winning_path(sess: dict) -> list[str] | None:
                 queue.append(v)
     if found is None:
         return None
-    path = []
+    path: list[str] = []
     cur: str | None = found
     while cur is not None:
         path.append(cur)
@@ -289,11 +312,55 @@ def black_winning_path(sess: dict) -> list[str] | None:
     return path
 
 
+def black_winning_path(sess: dict) -> list[str] | None:
+    """Shortest Black path from start_border to end_border, or None."""
+    owned = {p for p, v in sess["cells"].items() if v == "B"}
+    return _bfs_path(
+        owned,
+        list(sess.get("start_border") or []),
+        set(sess.get("end_border") or []),
+        sess.get("neighbours") or {},
+    )
+
+
+def white_border_sets(sess: dict) -> tuple[list[str], list[str]]:
+    """
+    White's opposite pair of sides: min letter-column ↔ max letter-column.
+
+    Black uses start_border/end_border (typically top/bottom of the rhombus);
+    White connects the remaining pair (left/right columns).
+    """
+    positions = list(sess.get("positions") or sess["cells"].keys())
+    if not positions:
+        return [], []
+    cols = {p: _letter_col(p) for p in positions}
+    lo, hi = min(cols.values()), max(cols.values())
+    left = [p for p in positions if cols[p] == lo]
+    right = [p for p in positions if cols[p] == hi]
+    return left, right
+
+
+def white_winning_path(sess: dict) -> list[str] | None:
+    """Shortest White path connecting the two White sides, or None."""
+    owned = {p for p, v in sess["cells"].items() if v == "W"}
+    left, right = white_border_sets(sess)
+    return _bfs_path(owned, left, set(right), sess.get("neighbours") or {})
+
+
 def _path_exists(sess: dict, color: str) -> bool:
-    """Black path start→end (White win = Black fails to connect within bound)."""
-    if color != "B":
-        return False
-    return black_winning_path(sess) is not None
+    if color == "B":
+        return black_winning_path(sess) is not None
+    if color == "W":
+        return white_winning_path(sess) is not None
+    return False
+
+
+def _set_winner(sess: dict, who: str, path: list[str] | None, message: str) -> None:
+    sess["finished"] = True
+    sess["winner"] = who
+    sess["winning_path"] = list(path) if path else None
+    sess["winner_color"] = "B" if who == "Black" else "W"
+    sess["message"] = message
 
 
 def apply_move(
@@ -332,20 +399,26 @@ def apply_move(
     sess["history"].append((pos, color))
     sess["moves_played"] += 1
     sess["to_move"] = "W" if color == "B" else "B"
-    # win / horizon
+    # QBF Hex: only Black has an explicit connection goal (start↔end).
+    # White does *not* win by forming a left–right path mid-game — that would
+    # cut Black’s remaining plies short (depth still has Black moves left).
+    # White wins only when the bound is exhausted / board full and Black never
+    # connected.
     bpath = black_winning_path(sess)
     if bpath:
-        sess["finished"] = True
-        sess["winner"] = "Black"
-        sess["winning_path"] = bpath
-        sess["message"] = (
-            f"Black connected borders via {' → '.join(bpath)}"
+        _set_winner(
+            sess,
+            "Black",
+            bpath,
+            f"Black connected borders via {' → '.join(bpath)}",
         )
     elif sess["moves_played"] >= sess["depth_bound"] or not open_cells(sess):
-        sess["finished"] = True
-        if not sess["winner"]:
-            sess["winner"] = "White (Black failed to connect)"
-            sess["winning_path"] = None
+        _set_winner(
+            sess,
+            "White",
+            None,
+            "White wins — Black failed to connect within the depth bound",
+        )
 
 
 def random_move(sess: dict, color: str | None = None) -> str | None:
@@ -370,6 +443,8 @@ def undo(sess: dict) -> None:
     sess["to_move"] = color
     sess["finished"] = False
     sess["winner"] = None
+    sess["winner_color"] = None
+    sess["winning_path"] = None
     sess["last_ai"] = None
 
 

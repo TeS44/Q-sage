@@ -7,11 +7,12 @@ QBF encodings for **2-player board games** (Hex, Harary’s Tic-Tac-Toe, Breakth
 | Parse BDDL / Hex inputs | `qsage parse …` |
 | Encode winning strategy (bwnib) | `qsage encode -e bwnib …` |
 | Solve with QuBi / Bloqqer+CAQE | `qsage solve …` |
-| Interactive play | see [Interactive play](#interactive-play) |
+| **Browser play (Hex + grid vs QBF)** | `qsage web` → [Interactive play](#interactive-play) |
+| Terminal / certificate play | `qsage play …` |
 
 Papers: [arXiv:2303.16949](https://arxiv.org/abs/2303.16949) · [arXiv:2301.07345](https://arxiv.org/abs/2301.07345) · [certificates](https://doi.org/10.4230/LIPIcs.SAT.2023.24)
 
-Docs: [`docs/DESIGN.md`](docs/DESIGN.md) · [`docs/ISSUES.md`](docs/ISSUES.md) · [`docs/ENCODINGS.md`](docs/ENCODINGS.md) · [`legacy/README.md`](legacy/README.md)
+Docs: [`docs/DESIGN.md`](docs/DESIGN.md) · [`docs/ISSUES.md`](docs/ISSUES.md) · [`docs/ENCODINGS.md`](docs/ENCODINGS.md) · [`docs/SCRATCH.md`](docs/SCRATCH.md) · [`legacy/README.md`](legacy/README.md)
 
 ---
 
@@ -149,95 +150,87 @@ python scripts/run_positional_paper_checks.py --encoding all
 
 ## Interactive play
 
-### Hex vs QBF solver (terminal)
+### 1. Web UI (start here)
+
+Play Hex and grid games in the browser against **Black (QBF / random)**. You are always **White**.
+
+```bash
+# setup (once)
+bash scripts/build_qubi_macos.sh       # → solvers/qubi/qubi
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev,play]"
+
+# run
+qsage web                              # http://127.0.0.1:8765/
+# qsage web --port 8765
+```
+
+Hard-refresh the browser (`Cmd+Shift+R`) after UI updates.
+
+| | |
+|--|--|
+| **You / opponent** | White / Black (QBF via QuBi, or random) |
+| **Hex** | Honeycomb; Black must connect dark edges in the depth bound |
+| **Grid** | HTTT, Domineering, Connect-c, Breakthrough, Evader–Pursuer, … |
+| **Depth** | Total plies + your remaining moves on screen |
+| **Black opens** | Server plays Black first when the instance requires it |
+| **QBF move** | Mid-game residual encode + QuBi (hard timeout kill) |
+| **Solve** | QuBi on the original `pg` / `bwnib` instance |
+| **Catalog** | `Benchmarks/playable_qbf.json` — regenerate with `python scripts/scan_playable_qbf.py` |
+
+Uses **`qsage.encode`** (paper/legacy parity). API: `/api/domains`, `/api/new`, `/api/move`, `/api/ai`, `/api/solve` (see `tests/web/`).
+
+### 2. Terminal play (optional)
+
+**Hex vs solver** (legacy solver stack — CAQE / Docker / WSL on Mac):
 
 ```bash
 qsage play hex --problem Benchmarks/B-Hex/hein_04_3x3-05.pg
-# equivalent:
-#   PYTHONPATH=legacy python legacy/interactive_play.py --problem …
+# qsage play hex -- --player user -e pg
 ```
-
-| Flag | Meaning |
-|------|---------|
-| `--problem` | Hex `.pg` file |
-| `--player user` | You play White (default) |
-| `--player random` | Random White |
-| `-e` | Encoding for the backend (see `-h`) |
-
-Needs a working solver via the legacy stack (CAQE under `solvers/`). On Mac/Windows prefer **WSL2** or ensure Linux solvers can run (Docker).
 
 ![sample_play](https://user-images.githubusercontent.com/37924323/215714804-6fff96c3-21b7-44c1-951f-15587202581f.png)
 
-### Grid games from a certificate (terminal)
-
-No QBF solve each turn — uses a precomputed certificate + meta file. Works on **Mac, Linux, Windows** with `python-sat`.
+**Certificate play** (no per-turn QBF; needs `python-sat`):
 
 ```bash
-pip install -e ".[play]"   # or: pip install python-sat
-
+pip install -e ".[play]"
 qsage play certificate
-# defaults to the 4×4 HTTT Tic certificate under testcases/
-# extra flags after -- :
-qsage play certificate -- --certificate_path path/to/certificate.cnf --player user
+# qsage play certificate -- --certificate_path path/to/certificate.cnf --player user
 ```
 
-### Browser UI
+### 3. Certificates & hybrid validation
 
-Planned local web UI: [issue #3](https://github.com/TeS44/Q-sage/issues/3).
-
-### Certificates (full / partial) — DepQBF-class + SQval
-
-**Key idea:** DepQBF-like tools make **partial** certificates cheap. Hybrid
-interactive play uses the cert for the first *n* quantifier layers and a QBF
-solver (DepQBF/QuAbs) for the rest — scalable generation + play.
+Partial certs: first *n* layers from a cert, rest via QBF (DepQBF / QuAbs).
 
 ```bash
 bash scripts/setup_sqval.sh
-qsage cert demo-equivalence          # full-strategy transfer LN→SN (Docker on Mac)
-qsage cert demo-partial              # partial shared-var equivalence (Hein_12)
-qsage cert hybrid --depth 2 --demo   # cert opening + solver tail
-qsage cert generate --qdimacs f.qdimacs --out cert.cnf   # Pedant (Docker on Mac)
-# AIGER via DepQBF+QRPcert (build from official sources first):
-bash scripts/setup_depqbf_cert.sh
+qsage cert demo-equivalence
+qsage cert demo-partial
+qsage cert hybrid --depth 2 --demo
+qsage cert generate --qdimacs f.qdimacs --out cert.cnf
+bash scripts/setup_depqbf_cert.sh   # optional AIGER path
 qsage cert generate --backend depqbf --qdimacs f.qdimacs --out cert.aag
-qsage cert validate -- …             # passthrough to SQval interactive_validation.py
 ```
 
-DepQBF source: [lonsing/depqbf](https://github.com/lonsing/depqbf) · QRPcert: [fmv.jku.at/qrpcert](https://fmv.jku.at/qrpcert/)  
-Details: [`docs/CERTIFICATES.md`](docs/CERTIFICATES.md) · [SQval](https://github.com/irfansha/SQval) · [paper](https://drops.dagstuhl.de/storage/00lipics/lipics-vol271-sat2023/LIPIcs.SAT.2023.24/LIPIcs.SAT.2023.24.pdf)
-
-### Web UI (local) — issue #3
-
-```bash
-pip install -e ".[play]"   # python-sat for certificate strategy play
-qsage web
-# open http://127.0.0.1:8765/
-```
-
-| Mode | What it does |
-|------|----------------|
-| **Hex** (B-Hex + GDDL) | Click cells; opponent random / QBF-guided Black |
-| **QBF from start** | QuBi on `pg` encoding of the puzzle |
-| **QBF mid-game** | Re-encode residual board + remaining depth |
-| **Certificates** | Play vs precomputed winning strategy (CNF + meta) |
-| **Grid instances** | “Black wins?” via bwnib + QuBi |
-
-From-scratch encoders (experimental) live under `qsage/scratch/` — separate from this play path.
+Details: [`docs/CERTIFICATES.md`](docs/CERTIFICATES.md) · [SQval](https://github.com/irfansha/SQval) · [DepQBF](https://github.com/lonsing/depqbf)
 
 ---
 
 ## Layout
 
 ```text
-qsage/          # supported package (parse, encode, solve, CLI)
-scripts/        # build QuBi, paper checks
-tests/          # pytest
-docs/           # design, issues, encoding keep-list
-Benchmarks/     # games + golden QCIR
-solvers/        # CAQE, QuBi, …
+qsage/          # package: parse, encode, solve, web, scratch, CLI
+  web/          # browser play server + static UI
+  scratch/      # standalone rewrite (solver-checked; see docs/SCRATCH.md)
+scripts/        # build QuBi, paper checks, playable scan
+tests/          # pytest (encode, web, scratch, …)
+docs/           # design, issues, encodings, scratch, certificates
+Benchmarks/     # games, goldens, playable_qbf.json
+solvers/        # QuBi, CAQE, …
 tools/          # Bloqqer, converters
 testcases/      # certificates / extra inputs
-legacy/         # original code (reference only — see legacy/README.md)
+legacy/         # original code (reference — see legacy/README.md)
 ```
 
 ---
@@ -246,9 +239,9 @@ legacy/         # original code (reference only — see legacy/README.md)
 
 ```bash
 pip install -e ".[dev]"   # includes pytest-xdist
-pytest tests/ -q -n auto  # parallel across cores (12 on this host)
-# serial (e.g. debugging):
-pytest tests/ -q
+pytest tests/ -q -n auto  # parallel
+pytest tests/web/ -q      # browser API / play simulations
+pytest tests/scratch/ -q  # rewrite vs previous encoders + paper tables
 ```
 
 ---
@@ -261,7 +254,8 @@ pytest tests/ -q
 | parse / encode | ✓ | ✓ | ✓ |
 | QuBi | build script | build / binary | **WSL2** |
 | Bloqqer+CAQE | Docker | native | Docker or WSL2 |
-| Hex interactive | solvers via WSL/Docker if needed | ✓ | WSL2 |
+| **`qsage web` (browser play)** | ✓ + QuBi | ✓ + QuBi | ✓ + QuBi (WSL2 ok) |
+| Terminal Hex play | solvers via WSL/Docker if needed | ✓ | WSL2 |
 | Certificate play | ✓ + python-sat | ✓ | ✓ + python-sat |
 
 ---

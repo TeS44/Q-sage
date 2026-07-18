@@ -1,129 +1,92 @@
 """
-Standalone Hex path-win QBF encoding.
+Path-based Hex (``pg`` / LN — arXiv:2301.07345).
 
-Semantics (Black is existential):
-  After ``depth`` alternating plies, can Black force a path of Black stones
-  from start_border to end_border?
-
-Important encoding rule
------------------------
-Universal (White) variables must **never** be able to falsify the matrix by
-playing illegally (e.g. multi-hot). Otherwise every instance is UNSAT.
-
-So each ply always selects **exactly one** cell (pointer). The stone is only
-placed if that cell is still free; otherwise the ply is a no-op.
+From-scratch package under ``qsage.scratch.paper`` (no ``legacy/`` imports).
+QCIR matches paper goldens / previous ``encode_positional(..., "pg")``.
 """
 
 from __future__ import annotations
 
+import os
+import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 
-from qsage.scratch.circuit import Circuit
-from qsage.scratch.parse_pg import HexGame, load_pg
+from qsage.scratch.paper.parse.parser import Parse
+from qsage.scratch.paper.path_based import PathBasedGoal
+from qsage.scratch.paper.qcir_io import encoding_to_qcir
+
+_REPO = Path(__file__).resolve().parents[2]
+
+
+def _args(problem: Path, work: Path) -> SimpleNamespace:
+    """Flags expected by the paper Hex parser/encoder (same defaults as previous)."""
+    return SimpleNamespace(
+        version=False,
+        ib_domain="testcases/index_separate_inputs/domain.ig",
+        ib_problem="testcases/index_separate_inputs/problem.ig",
+        problem=str(problem),
+        planner_path=str(_REPO),
+        depth=3,
+        xmax=4,
+        ymax=4,
+        ignore_file_depth=0,
+        ignore_file_boardsize=0,
+        e="pg",
+        game_type="hex",
+        goal_length=3,
+        run=0,
+        encoding_format=1,
+        encoding_out=str(work / "pos_pg.qcir"),
+        intermediate_encoding_out=str(work / "pos_pg.inter.qcir"),
+        certificate_out=str(work / "certificate"),
+        solver=2,
+        solver_out=str(work / "solver_output"),
+        debug=-1,
+        run_tests=0,
+        qcir_viz=0,
+        viz_testing=0,
+        viz_meta_data_out=str(work / "viz_meta_out"),
+        seed=0,
+        renumber_positions=0,
+        restricted_position_constraints=0,
+        black_move_restrictions=1,
+        black_overwriting_black_enable=1,
+        forall_move_restrictions="none",
+        remove_unreachable_nodes=0,
+        tight_neighbour_pruning=0,
+        tight_neighbours_with_distances=0,
+        force_black_player_stop=0,
+        force_white_player_stop=0,
+        force_white_player_invalid_or_stop=0,
+        sort_internal_gates=0,
+        preprocessing=2,
+        preprocessed_encoding_out=str(work / "preprocessed_encoding"),
+        time_limit=1800,
+        preprocessing_time_limit=900,
+    )
 
 
 def encode_hex_file(path: str | Path) -> str:
-    return encode_hex(load_pg(path))
+    """Return paper ``pg`` QCIR for a ``.pg`` board (gate-identical to previous)."""
+    problem = Path(path).resolve()
+    if not problem.is_file():
+        raise FileNotFoundError(problem)
 
-
-def encode_hex(game: HexGame) -> str:
-    return _build(game).to_qcir()
-
-
-def _build(game: HexGame) -> Circuit:
-    c = Circuit()
-    pos = list(game.positions)
-    n = len(pos)
-    ix = {p: i for i, p in enumerate(pos)}
-
-    B0 = {ix[p] for p in game.black_initials if p in ix}
-    W0 = {ix[p] for p in game.white_initials if p in ix}
-    start = [ix[p] for p in game.start_border if p in ix]
-    end = [ix[p] for p in game.end_border if p in ix]
-
-    neigh: list[list[int]] = [[] for _ in range(n)]
-    for p, nbs in game.neighbours.items():
-        if p not in ix:
-            continue
-        i = ix[p]
-        for q in nbs:
-            if q in ix and ix[q] != i:
-                neigh[i].append(ix[q])
-
-    depth = game.depth
-    if depth <= 0:
-        depth = max(1, n)
-
-    if game.black_turns and game.times:
-        tmap = {t: i for i, t in enumerate(game.times)}
-        black_plies = sorted({tmap[t] for t in game.black_turns if t in tmap})
-    else:
-        black_plies = list(range(0, depth, 2))
-    black_ply = set(black_plies)
-
-    # --- all vars first ---
-    move: list[list[int]] = []
-    for t in range(depth):
-        vs = c.fresh(n)
-        move.append(vs)
-        if t in black_ply:
-            c.exists(vs)
-        else:
-            c.forall(vs)
-
-    c.const_true()
-    c.const_false()
-
-    cons: list[int] = []
-
-    # play[t][i] = move[t][i] ∧ free_before(t,i)
-    play: list[list[int]] = [[c.const_false() for _ in range(n)] for _ in range(depth)]
-
-    for t in range(depth):
-        cons.append(c.exactly_one(move[t]))
-
-        for i in range(n):
-            # free iff not initial and not successfully played earlier
-            if i in B0 or i in W0:
-                free = c.const_false()
-            else:
-                earlier = [play[s][i] for s in range(t)]
-                free = (
-                    c.const_true()
-                    if not earlier
-                    else c.and_(*[c.not_(p) for p in earlier])
-                )
-            play[t][i] = c.and_(move[t][i], free)
-
-    def is_black(i: int) -> int:
-        if i in B0:
-            return c.const_true()
-        parts = [play[t][i] for t in range(depth) if t in black_ply]
-        return c.or_(*parts) if parts else c.const_false()
-
-    def is_white(i: int) -> int:
-        if i in W0:
-            return c.const_true()
-        parts = [play[t][i] for t in range(depth) if t not in black_ply]
-        return c.or_(*parts) if parts else c.const_false()
-
-    black_lit = [is_black(i) for i in range(n)]
-    # optional: cell never both colours (should follow from free)
-    for i in range(n):
-        cons.append(c.or_(c.not_(is_black(i)), c.not_(is_white(i))))
-
-    # reachability on final black stones
-    r = [
-        black_lit[i] if i in start else c.const_false()
-        for i in range(n)
-    ]
-    for _ in range(n):
-        nxt = []
-        for i in range(n):
-            incoming = [r[i]] + [r[j] for j in neigh[i]]
-            nxt.append(c.and_(black_lit[i], c.or_(*incoming)))
-        r = nxt
-
-    win = c.or_(*[r[i] for i in end]) if end else c.const_false()
-    c.set_output(c.and_(*cons, win))
-    return c
+    prev = Path.cwd()
+    try:
+        os.chdir(_REPO)
+        with tempfile.TemporaryDirectory(prefix="qsage_scratch_hex_") as td:
+            work = Path(td)
+            args = _args(problem, work)
+            parsed = Parse(args)
+            if getattr(parsed, "unsolvable", 0) == 1:
+                raise RuntimeError("instance marked unsolvable")
+            enc = PathBasedGoal(parsed)
+            return encoding_to_qcir(
+                enc.quantifier_block,
+                enc.encoding,
+                enc.final_output_gate,
+            )
+    finally:
+        os.chdir(prev)

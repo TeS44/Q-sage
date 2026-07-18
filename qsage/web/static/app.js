@@ -166,20 +166,28 @@ function parsePos(label) {
   return { col, row };
 }
 
-/** Flat-top hex corners around (cx,cy), radius size. */
-function hexPoints(cx, cy, size) {
+/** Flat-top hex corners (E, SE, SW, W, NW, NE). */
+function hexCorners(cx, cy, size) {
   const pts = [];
   for (let i = 0; i < 6; i++) {
     const a = (Math.PI / 180) * (60 * i);
     pts.push([cx + size * Math.cos(a), cy + size * Math.sin(a)]);
   }
-  return pts.map((p) => p.join(",")).join(" ");
+  return pts;
+}
+
+function hexPoints(cx, cy, size) {
+  return hexCorners(cx, cy, size)
+    .map((p) => p.join(","))
+    .join(" ");
 }
 
 /**
- * Little-Golem-style Hex: flat-top hexes in a rhombus.
- * col = letter (a…), row = number (1…).
- * Black borders ≈ top/bottom of rhombus edges (start/endboarder in files).
+ * Clean Hex board (Little-Golem inspired).
+ *
+ * Honeycomb of wood hexes; four thin goal rails on the outer rim
+ * (black opposite sides, red opposite sides). No floating captions,
+ * no glow bands, no labels on empty cells.
  */
 function renderHexSvg(cells) {
   const table = $("board");
@@ -206,147 +214,90 @@ function renderHexSvg(cells) {
     maxR = Math.max(maxR, pr.row);
   }
   const n = Math.max(maxC, maxR) + 1;
-  // size scales with board
-  const size = n <= 3 ? 32 : n <= 5 ? 26 : n <= 7 ? 22 : 18;
-  const w = size * 2;
+  const size = n <= 3 ? 34 : n <= 5 ? 28 : n <= 7 ? 22 : 18;
   const h = Math.sqrt(3) * size;
+  const margin = size * 1.85;
 
-  // Pixel center for (col,row) — classic Hex rhombus (flat-top)
   function center(col, row) {
-    const x = size * (1.5 * col) + size * 1.2;
-    const y = h * (row + col * 0.5) + size * 1.2;
-    return [x, y];
+    return [
+      size * (1.5 * col) + margin,
+      h * (row + col * 0.5) + margin,
+    ];
   }
 
+  const centers = {};
   let maxX = 0,
     maxY = 0;
-  const centers = {};
   for (const p of positions) {
     const { col, row } = coords[p];
     const [x, y] = center(col, row);
     centers[p] = [x, y];
-    maxX = Math.max(maxX, x + size * 1.3);
-    maxY = Math.max(maxY, y + size * 1.3);
+    maxX = Math.max(maxX, x + size);
+    maxY = Math.max(maxY, y + size);
   }
-
-  // Edge markers: Black connects start↔end (usually opposite sides of rhombus)
-  // Draw thick border strips along min-row / max-row edges of the rhombus
-  // for visual Little Golem cues (dark = Black NW/SE, light = White NE/SW)
-  const start = new Set(state.start_border || []);
-  const end = new Set(state.end_border || []);
 
   const NS = "http://www.w3.org/2000/svg";
   while (svg.firstChild) svg.removeChild(svg.firstChild);
-  // viewBox set after borders (may expand); provisional size here
-  svg.setAttribute("viewBox", `0 0 ${maxX + size * 2} ${maxY + size * 2}`);
-  svg.setAttribute("width", String(Math.min(620, maxX + size * 2.5)));
-  svg.setAttribute("height", String(Math.min(540, maxY + size * 2.5)));
 
-  // Lighter board backdrop so gold/blue borders read clearly
-  const backdrop = document.createElementNS(NS, "rect");
-  backdrop.setAttribute("x", 0);
-  backdrop.setAttribute("y", 0);
-  backdrop.setAttribute("width", maxX + size * 3);
-  backdrop.setAttribute("height", maxY + size * 3);
-  backdrop.setAttribute("fill", "#2a3548");
-  backdrop.setAttribute("rx", "8");
-  svg.appendChild(backdrop);
+  const vbW = maxX + margin * 0.7;
+  const vbH = maxY + margin * 0.7;
+  svg.setAttribute("viewBox", `0 0 ${vbW} ${vbH}`);
+  svg.setAttribute("width", String(Math.min(640, vbW)));
+  svg.setAttribute("height", String(Math.min(560, vbH)));
 
-  // Background diamond (board felt)
-  const bg = document.createElementNS(NS, "polygon");
-  const corners = [
-    center(0, 0),
-    center(maxC, 0),
-    center(maxC, maxR),
-    center(0, maxR),
-  ];
-  bg.setAttribute(
-    "points",
-    corners.map(([x, y]) => `${x},${y}`).join(" ")
-  );
-  bg.setAttribute("fill", "#c4a574");
-  bg.setAttribute("opacity", "0.45");
-  svg.appendChild(bg);
+  // Warm board surface (not dark navy)
+  const page = document.createElementNS(NS, "rect");
+  page.setAttribute("x", 0);
+  page.setAttribute("y", 0);
+  page.setAttribute("width", vbW);
+  page.setAttribute("height", vbH);
+  page.setAttribute("rx", "12");
+  page.setAttribute("class", "hex-page");
+  svg.appendChild(page);
 
-  /**
-   * Draw a high-contrast goal border outside the edge cells.
-   * side: 'N'|'S'|'W'|'E' approx for outward offset direction.
-   * kind: 'B' (gold/black) or 'W' (sky/white)
-   */
-  function drawGoalEdge(labels, kind, outward) {
-    const raw = labels.map((lab) => centers[lab]).filter(Boolean);
-    if (!raw.length) return null;
-    // Compute outward offset from board center
-    let bx = 0,
-      by = 0,
-      n = 0;
-    for (const p of Object.values(centers)) {
-      bx += p[0];
-      by += p[1];
-      n++;
-    }
-    bx /= n || 1;
-    by /= n || 1;
-    const mid0 = raw[Math.floor(raw.length / 2)];
-    let ox = mid0[0] - bx;
-    let oy = mid0[1] - by;
-    const len = Math.hypot(ox, oy) || 1;
-    const dist = size * 1.15;
-    ox = (ox / len) * dist;
-    oy = (oy / len) * dist;
-    if (outward === false) {
-      ox = -ox;
-      oy = -oy;
-    }
-    const pts = raw.map(([x, y]) => [x + ox, y + oy]);
-    const ptStr = pts.map(([x, y]) => `${x},${y}`).join(" ");
+  // Centroid for outward normals
+  let bx = 0,
+    by = 0,
+    bn = 0;
+  for (const [x, y] of Object.values(centers)) {
+    bx += x;
+    by += y;
+    bn++;
+  }
+  bx /= bn || 1;
+  by /= bn || 1;
 
-    const glow = document.createElementNS(NS, "polyline");
-    glow.setAttribute("points", ptStr);
-    glow.setAttribute(
-      "class",
-      kind === "B" ? "edge-black-glow" : "edge-white-glow"
-    );
-    svg.appendChild(glow);
-
-    const main = document.createElementNS(NS, "polyline");
-    main.setAttribute("points", ptStr);
-    main.setAttribute("class", kind === "B" ? "edge-black" : "edge-white");
-    svg.appendChild(main);
-
-    const inner = document.createElementNS(NS, "polyline");
-    inner.setAttribute("points", ptStr);
-    inner.setAttribute(
-      "class",
-      kind === "B" ? "edge-black-inner" : "edge-white-inner"
-    );
-    svg.appendChild(inner);
-
-    // Badge pill with high contrast
+  function outward(labs, dist) {
+    const pts = labs.map((lab) => centers[lab]).filter(Boolean);
+    if (!pts.length) return null;
     const mid = pts[Math.floor(pts.length / 2)];
-    const bw = kind === "B" ? 54 : 52;
-    const bh = 18;
-    const bgR = document.createElementNS(NS, "rect");
-    bgR.setAttribute("x", mid[0] - bw / 2);
-    bgR.setAttribute("y", mid[1] - bh / 2);
-    bgR.setAttribute("width", bw);
-    bgR.setAttribute("height", bh);
-    bgR.setAttribute("rx", "4");
-    bgR.setAttribute(
-      "class",
-      kind === "B" ? "edge-badge-bg-B" : "edge-badge-bg-W"
-    );
-    svg.appendChild(bgR);
-    const t = document.createElementNS(NS, "text");
-    t.setAttribute("x", mid[0]);
-    t.setAttribute("y", mid[1]);
-    t.setAttribute(
-      "class",
-      "edge-badge " + (kind === "B" ? "edge-badge-text-B" : "edge-badge-text-W")
-    );
-    t.textContent = kind === "B" ? "BLACK" : "WHITE";
-    svg.appendChild(t);
-    return pts;
+    let ox = mid[0] - bx;
+    let oy = mid[1] - by;
+    const L = Math.hypot(ox, oy) || 1;
+    ox = (ox / L) * dist;
+    oy = (oy / L) * dist;
+    return pts.map(([x, y]) => [x + ox, y + oy]);
+  }
+
+  function polyline(pts, cls) {
+    if (!pts || pts.length < 2) return;
+    // Extend ends slightly so corners meet
+    const p = pts.map((q) => q.slice());
+    const dx0 = p[1][0] - p[0][0];
+    const dy0 = p[1][1] - p[0][1];
+    const l0 = Math.hypot(dx0, dy0) || 1;
+    p[0][0] -= (dx0 / l0) * size * 0.35;
+    p[0][1] -= (dy0 / l0) * size * 0.35;
+    const i = p.length - 1;
+    const dx1 = p[i][0] - p[i - 1][0];
+    const dy1 = p[i][1] - p[i - 1][1];
+    const l1 = Math.hypot(dx1, dy1) || 1;
+    p[i][0] += (dx1 / l1) * size * 0.35;
+    p[i][1] += (dy1 / l1) * size * 0.35;
+    const el = document.createElementNS(NS, "polyline");
+    el.setAttribute("points", p.map(([x, y]) => `${x},${y}`).join(" "));
+    el.setAttribute("class", cls);
+    svg.appendChild(el);
   }
 
   const sortByCol = (labs) =>
@@ -356,51 +307,83 @@ function renderHexSvg(cells) {
         (a, b) =>
           coords[a].col - coords[b].col || coords[a].row - coords[b].row
       );
+  const sortByRow = (labs) =>
+    labs
+      .filter((p) => centers[p])
+      .sort(
+        (a, b) =>
+          coords[a].row - coords[b].row || coords[a].col - coords[b].col
+      );
 
-  // Black goal: start_border ↔ end_border (from instance file)
-  const startEdge = sortByCol([...start]);
-  const endEdge = sortByCol([...end]);
-  drawGoalEdge(startEdge, "B", true);
-  drawGoalEdge(endEdge, "B", true);
+  const startEdge = sortByCol([...(state.start_border || [])]);
+  const endEdge = sortByCol([...(state.end_border || [])]);
+  const leftEdge = sortByRow(
+    positions.filter((p) => coords[p] && coords[p].col === 0)
+  );
+  const rightEdge = sortByRow(
+    positions.filter((p) => coords[p] && coords[p].col === maxC)
+  );
 
-  // White goal sides of the rhombus (left / right letter columns)
-  const leftEdge = positions
-    .filter((p) => coords[p] && coords[p].col === 0)
-    .sort((a, b) => coords[a].row - coords[b].row);
-  const rightEdge = positions
-    .filter((p) => coords[p] && coords[p].col === maxC)
-    .sort((a, b) => coords[a].row - coords[b].row);
-  drawGoalEdge(leftEdge, "W", true);
-  drawGoalEdge(rightEdge, "W", true);
-
-  // Expand viewBox slightly so offset borders / badges aren't clipped
-  maxX += size * 2.2;
-  maxY += size * 2.2;
-  svg.setAttribute("viewBox", `0 0 ${maxX + size} ${maxY + size}`);
-
-  const pathSet = new Set(state.winning_path || []);
-  // Also compute client-side if Black connected but path not sent
-  if (!pathSet.size) {
-    const bp = findBlackPath(cells, state);
-    bp.forEach((p) => pathSet.add(p));
+  // Soft wood mat under the honeycomb
+  {
+    const corners = [
+      center(0, 0),
+      center(maxC, 0),
+      center(maxC, maxR),
+      center(0, maxR),
+    ].map(([x, y]) => {
+      const ox = x - bx;
+      const oy = y - by;
+      const L = Math.hypot(ox, oy) || 1;
+      const d = size * 0.72;
+      return [x + (ox / L) * d, y + (oy / L) * d];
+    });
+    const mat = document.createElementNS(NS, "polygon");
+    mat.setAttribute(
+      "points",
+      corners.map(([x, y]) => `${x},${y}`).join(" ")
+    );
+    mat.setAttribute("class", "hex-mat");
+    svg.appendChild(mat);
   }
 
-  // Cells
+  // Goal rails — thin, clean (under cells)
+  const railDist = size * 0.88;
+  polyline(outward(startEdge, railDist), "hex-rail-B");
+  polyline(outward(endEdge, railDist), "hex-rail-B");
+  polyline(outward(leftEdge, railDist), "hex-rail-W");
+  polyline(outward(rightEdge, railDist), "hex-rail-W");
+
+  // Win path prep
+  const pathSet = new Set(state.winning_path || []);
+  let pathColor =
+    state.winner_color ||
+    ((state.winner || "").startsWith("Black")
+      ? "B"
+      : (state.winner || "").startsWith("White")
+        ? "W"
+        : null);
+  // Only Black connection paths are win paths mid-game (QBF Hex).
+  if (!pathSet.size) {
+    const bp = findBlackPath(cells, state);
+    if (bp.length) {
+      bp.forEach((p) => pathSet.add(p));
+      pathColor = pathColor || "B";
+    }
+  }
+
+  // Honeycomb cells (tight pack)
   for (const p of positions) {
     const [cx, cy] = centers[p];
     const v = cells[p];
     const poly = document.createElementNS(NS, "polygon");
-    poly.setAttribute("points", hexPoints(cx, cy, size * 0.95));
+    poly.setAttribute("points", hexPoints(cx, cy, size * 0.97));
     let cls = "hex-cell open";
-    if (v === "B" || v === "black") cls = "hex-cell B";
-    else if (v === "W" || v === "white") cls = "hex-cell W";
-    if (pathSet.has(p)) cls += " on-path";
-    if (start.has(p) || end.has(p)) cls += " border-B";
-    else if (
-      (coords[p] && coords[p].col === 0) ||
-      (coords[p] && coords[p].col === maxC)
-    )
-      cls += " border-W";
+    if (v === "B" || v === "black") cls = "hex-cell filled";
+    else if (v === "W" || v === "white") cls = "hex-cell filled";
+    if (pathSet.has(p)) {
+      cls += pathColor === "W" ? " on-path-W" : " on-path";
+    }
     poly.setAttribute("class", cls);
     poly.dataset.pos = p;
     poly.setAttribute("title", p);
@@ -420,44 +403,25 @@ function renderHexSvg(cells) {
     }
     svg.appendChild(poly);
 
-    // stone circle for occupied (Little Golem look)
     const isB = v === "B" || v === "black";
     const isW = v === "W" || v === "white";
     if (isB || isW) {
       const circ = document.createElementNS(NS, "circle");
       circ.setAttribute("cx", cx);
       circ.setAttribute("cy", cy);
-      circ.setAttribute("r", size * 0.45);
-      // Black = dark stone; White = bright stone + blue ring (your pieces)
-      circ.setAttribute("fill", isB ? "#111111" : "#ffffff");
-      circ.setAttribute("stroke", isB ? "#666666" : "#3d8bfd");
-      circ.setAttribute("stroke-width", isW ? "3" : "1.5");
+      circ.setAttribute("r", size * 0.48);
+      circ.setAttribute("class", isB ? "hex-stone-B" : "hex-stone-W");
       circ.style.pointerEvents = "none";
       svg.appendChild(circ);
-      // letter on stone so colour is unambiguous
-      const mark = document.createElementNS(NS, "text");
-      mark.setAttribute("x", cx);
-      mark.setAttribute("y", cy);
-      mark.setAttribute("class", "hex-label " + (isB ? "onB" : "onW"));
-      mark.setAttribute("font-size", String(Math.max(10, size * 0.45)));
-      mark.setAttribute("font-weight", "700");
-      mark.textContent = isB ? "B" : "W";
-      svg.appendChild(mark);
-    } else {
-      const lab = document.createElementNS(NS, "text");
-      lab.setAttribute("x", cx);
-      lab.setAttribute("y", cy);
-      lab.setAttribute("class", "hex-label");
-      lab.textContent = p;
-      svg.appendChild(lab);
     }
   }
 
-  // Winning path polyline (on top of stones)
+  // Win path (subtle)
   if (pathSet.size >= 2) {
-    const order = state.winning_path && state.winning_path.length
-      ? state.winning_path
-      : [...pathSet];
+    const order =
+      state.winning_path && state.winning_path.length
+        ? state.winning_path
+        : [...pathSet];
     const pts = order
       .map((p) => centers[p])
       .filter(Boolean)
@@ -466,12 +430,12 @@ function renderHexSvg(cells) {
     if (pts) {
       const pl = document.createElementNS(NS, "polyline");
       pl.setAttribute("points", pts);
-      pl.setAttribute("class", "win-path");
+      pl.setAttribute("class", pathColor === "W" ? "win-path-W" : "win-path");
       svg.appendChild(pl);
     }
   }
 
-  // Column letters along top (row 0)
+  // Outside coords only (a,b,c… and 1,2,3…)
   for (let c = 0; c <= maxC; c++) {
     const any = positions.find(
       (p) => coords[p] && coords[p].col === c && coords[p].row === 0
@@ -480,12 +444,11 @@ function renderHexSvg(cells) {
     const [x, y] = centers[any];
     const t = document.createElementNS(NS, "text");
     t.setAttribute("x", x);
-    t.setAttribute("y", y - size * 1.15);
-    t.setAttribute("class", "coord");
+    t.setAttribute("y", y - size * 1.35);
+    t.setAttribute("class", "hex-coord");
     t.textContent = String.fromCharCode(97 + c);
     svg.appendChild(t);
   }
-  // Row numbers along left (col 0)
   for (let r = 0; r <= maxR; r++) {
     const any = positions.find(
       (p) => coords[p] && coords[p].col === 0 && coords[p].row === r
@@ -493,29 +456,23 @@ function renderHexSvg(cells) {
     if (!any) continue;
     const [x, y] = centers[any];
     const t = document.createElementNS(NS, "text");
-    t.setAttribute("x", x - size * 1.25);
+    t.setAttribute("x", x - size * 1.35);
     t.setAttribute("y", y);
-    t.setAttribute("class", "coord");
+    t.setAttribute("class", "hex-coord");
     t.textContent = String(r + 1);
     svg.appendChild(t);
   }
 }
 
-/** BFS Black path start_border → end_border using state.neighbours */
-function findBlackPath(cells, st) {
-  const owned = new Set(
-    Object.keys(cells).filter((p) => cells[p] === "B" || cells[p] === "black")
-  );
-  const starts = (st.start_border || []).filter((p) => owned.has(p));
-  const ends = new Set((st.end_border || []).filter((p) => owned.has(p)));
-  if (!starts.length || !ends.size) return [];
-  const neigh = st.neighbours || {};
+function _bfsOwnedPath(owned, starts, ends, neigh) {
   const parent = {};
   const q = [];
   for (const s of starts) {
+    if (!owned.has(s)) continue;
     parent[s] = null;
     q.push(s);
   }
+  if (!q.length) return [];
   let found = null;
   while (q.length) {
     const u = q.shift();
@@ -539,6 +496,40 @@ function findBlackPath(cells, st) {
   }
   path.reverse();
   return path;
+}
+
+/** BFS Black path start_border → end_border using state.neighbours */
+function findBlackPath(cells, st) {
+  const owned = new Set(
+    Object.keys(cells).filter((p) => cells[p] === "B" || cells[p] === "black")
+  );
+  const starts = (st.start_border || []).filter((p) => owned.has(p));
+  const ends = new Set((st.end_border || []).filter((p) => owned.has(p)));
+  if (!starts.length || !ends.size) return [];
+  return _bfsOwnedPath(owned, starts, ends, st.neighbours || {});
+}
+
+/** BFS White path left column (col 0) → right column (maxC) */
+function findWhitePath(cells, st, maxC) {
+  const owned = new Set(
+    Object.keys(cells).filter((p) => cells[p] === "W" || cells[p] === "white")
+  );
+  const left =
+    (st.white_borders && st.white_borders.left) ||
+    Object.keys(cells).filter((p) => {
+      const pr = parsePos(p);
+      return pr && pr.col === 0;
+    });
+  const right =
+    (st.white_borders && st.white_borders.right) ||
+    Object.keys(cells).filter((p) => {
+      const pr = parsePos(p);
+      return pr && pr.col === maxC;
+    });
+  const starts = left.filter((p) => owned.has(p));
+  const ends = new Set(right.filter((p) => owned.has(p)));
+  if (!starts.length || !ends.size) return [];
+  return _bfsOwnedPath(owned, starts, ends, st.neighbours || {});
 }
 
 /**
@@ -604,6 +595,15 @@ function renderGridSvg(cells) {
     gridSvg.appendChild(line);
   }
 
+  const winCells = new Set(state.winning_cells || []);
+  const winColor =
+    state.winner_color ||
+    ((state.winner || "").startsWith("Black")
+      ? "B"
+      : (state.winner || "").startsWith("White")
+        ? "W"
+        : null);
+
   // cells: x=1..w left→right, y=1..h bottom→top (chess-like)
   for (let x = 1; x <= w; x++) {
     for (let y = 1; y <= h; y++) {
@@ -619,7 +619,11 @@ function renderGridSvg(cells) {
       hit.setAttribute("y", pad + (h - y) * cell);
       hit.setAttribute("width", cell);
       hit.setAttribute("height", cell);
-      hit.setAttribute("class", "cell-hit");
+      let hitCls = "cell-hit";
+      if (winCells.has(lab)) {
+        hitCls += winColor === "W" ? " win-cell-W" : " win-cell-B";
+      }
+      hit.setAttribute("class", hitCls);
       hit.dataset.pos = lab;
       hit.setAttribute("title", lab);
       // Legal anchors for hover pair-highlight (domineering)
@@ -665,7 +669,11 @@ function renderGridSvg(cells) {
         circ.setAttribute("cx", cx);
         circ.setAttribute("cy", cy);
         circ.setAttribute("r", cell * 0.36);
-        circ.setAttribute("class", isB ? "stone-B" : "stone-W");
+        let scls = isB ? "stone-B" : "stone-W";
+        if (winCells.has(lab)) {
+          scls += winColor === "W" ? " stone-win-W" : " stone-win-B";
+        }
+        circ.setAttribute("class", scls);
         circ.style.pointerEvents = "none";
         gridSvg.appendChild(circ);
         const mark = document.createElementNS(NS, "text");
@@ -675,6 +683,34 @@ function renderGridSvg(cells) {
         mark.textContent = isB ? "B" : "W";
         gridSvg.appendChild(mark);
       }
+    }
+  }
+
+  // Win line through goal cells (connect-k)
+  if (winCells.size >= 2 && state.winning_cells && state.winning_cells.length) {
+    const pts = state.winning_cells
+      .map((lab) => {
+        const m = /^([a-zA-Z]+)(\d+)$/.exec(lab);
+        if (!m) return null;
+        let xi = 0;
+        for (const ch of m[1].toLowerCase()) {
+          xi = xi * 26 + (ch.charCodeAt(0) - 96);
+        }
+        const yi = parseInt(m[2], 10);
+        const cx = pad + (xi - 0.5) * cell;
+        const cy = pad + (h - yi + 0.5) * cell;
+        return `${cx},${cy}`;
+      })
+      .filter(Boolean)
+      .join(" ");
+    if (pts) {
+      const pl = document.createElementNS(NS, "polyline");
+      pl.setAttribute("points", pts);
+      pl.setAttribute(
+        "class",
+        winColor === "W" ? "grid-win-path-W" : "grid-win-path-B"
+      );
+      gridSvg.appendChild(pl);
     }
   }
 

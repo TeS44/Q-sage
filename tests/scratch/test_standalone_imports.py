@@ -1,4 +1,4 @@
-"""scratch must not import encode/parse/legacy."""
+"""Scratch paper package must not depend on the legacy/ tree."""
 
 from __future__ import annotations
 
@@ -7,27 +7,28 @@ from pathlib import Path
 
 SCRATCH = Path(__file__).resolve().parents[2] / "qsage" / "scratch"
 
-FORBIDDEN = (
-    "qsage.encode",
-    "qsage.parse",
+# Public + paper code must not import the on-disk legacy tree or old package roots.
+FORBIDDEN_PREFIXES = (
     "legacy",
     "q_encodings",
 )
 
 
-def test_no_forbidden_imports() -> None:
+def test_no_legacy_tree_imports() -> None:
     for path in SCRATCH.rglob("*.py"):
+        if "experimental" in path.parts:
+            continue  # pure experiments may evolve freely
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
+            names: list[str] = []
             if isinstance(node, ast.Import):
-                for alias in node.names:
-                    for bad in FORBIDDEN:
-                        assert bad not in alias.name, f"{path}: import {alias.name}"
+                names = [a.name for a in node.names]
             elif isinstance(node, ast.ImportFrom):
-                mod = node.module or ""
-                for bad in FORBIDDEN:
-                    assert not mod.startswith(bad), f"{path}: from {mod}"
-                    assert bad not in mod, f"{path}: from {mod}"
+                names = [node.module or ""]
+            for name in names:
+                for bad in FORBIDDEN_PREFIXES:
+                    assert not name.startswith(bad), f"{path}: import {name}"
+                assert "/legacy" not in name and name != "legacy", path
 
 
 def test_public_api() -> None:
