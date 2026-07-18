@@ -185,6 +185,10 @@ qsage play certificate -- --certificate_path path/to/certificate.cnf --player us
 
 Planned local web UI: [issue #3](https://github.com/TeS44/Q-sage/issues/3).
 
+### Certificates (full / partial)
+
+For scalable QBF validation and winning-strategy equivalence, use **[SQval](https://github.com/irfansha/SQval)** (recommended over reimplementing cert logic here). See [`docs/CERTIFICATES.md`](docs/CERTIFICATES.md) and the SAT 2023 paper [LIPIcs SAT.2023.24](https://drops.dagstuhl.de/storage/00lipics/lipics-vol271-sat2023/LIPIcs.SAT.2023.24/LIPIcs.SAT.2023.24.pdf).
+
 ---
 
 ## Layout
