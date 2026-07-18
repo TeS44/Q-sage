@@ -92,6 +92,19 @@
     #colorBanner .turn-line.yours { color: #86efac; font-weight: 600; }
     #colorBanner .turn-line.theirs { color: #fcd34d; font-weight: 600; }
     #colorBanner .turn-line.over { color: var(--muted); }
+    #movesBar {
+      display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center;
+      padding: 0.55rem 0.85rem; border-radius: 8px;
+      background: #121a26; border: 1px solid var(--border); font-size: 0.88rem;
+    }
+    #movesBar .chip-m {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.25rem 0.6rem; border-radius: 6px; background: #1e2a3d;
+      border: 1px solid var(--border);
+    }
+    #movesBar .chip-m.you { border-color: #3d8bfd; }
+    #movesBar .chip-m .n { font-weight: 700; color: #fff; font-size: 1rem; }
+    #movesBar .explain { color: var(--muted); font-size: 0.8rem; width: 100%; margin: 0.15rem 0 0; }
     /* Square boards (fallback / certificate) */
     #board { border-collapse: collapse; user-select: none; margin: 0 auto; display: none; }
     #board td {
@@ -281,8 +294,18 @@
         <span>Mode: <strong id="stMode">—</strong></span>
         <span>Status: <strong id="status">—</strong></span>
         <span>To move: <strong id="tomove">—</strong></span>
-        <span>Depth: <strong id="depth">—</strong></span>
-        <span>Moves: <strong id="moves">—</strong></span>
+        <span>Depth (plies): <strong id="depth">—</strong></span>
+        <span>Plies done: <strong id="moves">—</strong></span>
+      </div>
+      <div id="movesBar">
+        <span class="chip-m you">Your moves left: <span class="n" id="yourLeft">—</span>
+          <span style="color:var(--muted);font-size:0.8rem">/ <span id="yourTotal">—</span></span>
+        </span>
+        <span class="chip-m">Black (QBF) left: <span class="n" id="oppLeft">—</span>
+          <span style="color:var(--muted);font-size:0.8rem">/ <span id="oppTotal">—</span></span>
+        </span>
+        <span class="chip-m">Plies left: <span class="n" id="pliesLeft">—</span></span>
+        <p class="explain" id="depthExplain">Depth = total half-moves. Depth 5 with Black first → you (White) get 2 moves, Black 3.</p>
       </div>
       <div id="busyBanner" aria-live="polite">
         <div class="spinner" aria-hidden="true"></div>

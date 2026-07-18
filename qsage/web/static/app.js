@@ -766,9 +766,30 @@ function render() {
     : state.finished
       ? "—"
       : toMoveLabel + (state.your_turn ? " (you)" : " (opponent)");
-  $("depth").textContent = state.depth_bound ?? "—";
-  $("moves").textContent = state.moves_played ?? "—";
+  $("depth").textContent = state.depth_plies ?? state.depth_bound ?? "—";
+  $("moves").textContent =
+    (state.moves_played ?? "—") +
+    " / " +
+    (state.depth_plies ?? state.depth_bound ?? "—");
   $("msg").textContent = state.message || "";
+  // Remaining moves
+  const yl = $("yourLeft");
+  const yt = $("yourTotal");
+  const ol = $("oppLeft");
+  const ot = $("oppTotal");
+  const pl = $("pliesLeft");
+  const de = $("depthExplain");
+  if (yl) yl.textContent = state.your_moves_left ?? "—";
+  if (yt) yt.textContent = state.your_moves_total ?? "—";
+  if (ol) ol.textContent = state.opponent_moves_left ?? state.black_moves_left ?? "—";
+  if (ot)
+    ot.textContent = state.opponent_moves_total ?? state.black_moves_total ?? "—";
+  if (pl) pl.textContent = state.plies_left ?? "—";
+  if (de) {
+    de.textContent =
+      state.depth_explain ||
+      "Depth = total half-moves (plies). Example: depth 5, Black first → Black 3 moves, you (White) 2.";
+  }
   updateColorBanner();
 
   const cells = state.cells || {};

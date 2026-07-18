@@ -115,11 +115,52 @@ def new_grid_session(problem_rel: str, domain_rel: str | None = None) -> dict:
     }
 
 
+def _grid_move_budget(sess: dict) -> dict:
+    """
+    Depth = total plies. With Black first: Black gets ceil(d/2), White floor(d/2).
+
+    Example depth 5, Black first → Black 3, White (you) 2.
+    """
+    depth = int(sess.get("depth_bound") or 0)
+    black_first = bool(sess.get("black_first", True))
+    schedule = []
+    for i in range(depth):
+        if black_first:
+            schedule.append("B" if i % 2 == 0 else "W")
+        else:
+            schedule.append("W" if i % 2 == 0 else "B")
+    black_total = schedule.count("B")
+    white_total = schedule.count("W")
+    played = int(sess.get("moves_played") or 0)
+    rem = schedule[played:]
+    black_left = rem.count("B")
+    white_left = rem.count("W")
+    return {
+        "depth_plies": depth,
+        "depth_explain": (
+            f"Depth {depth} = {depth} half-moves total "
+            f"(Black {black_total}, White {white_total}). "
+            f"You (White) get {white_total} move(s)."
+        ),
+        "schedule": schedule,
+        "black_moves_total": black_total,
+        "white_moves_total": white_total,
+        "black_moves_left": black_left,
+        "white_moves_left": white_left,
+        "your_moves_total": white_total,
+        "your_moves_left": white_left,
+        "opponent_moves_total": black_total,
+        "opponent_moves_left": black_left,
+        "plies_left": max(0, depth - played),
+    }
+
+
 def public_grid(sess: dict) -> dict:
     human = sess.get("human_color") or "W"
     ai = sess.get("ai_color") or "B"
     mode = sess.get("play_mode") or "qbf"
     labels = {"B": "Black", "W": "White"}
+    budget = _grid_move_budget(sess)
     your_turn = (not sess["finished"]) and sess["to_move"] == human
     last = sess.get("last_ai") or {}
     if sess["finished"]:
@@ -128,12 +169,18 @@ def public_grid(sess: dict) -> dict:
         )
     elif your_turn and last.get("color") == "B" and last.get("position"):
         turn_hint = (
-            f"QBF played Black at {last['position']} — your turn (White)."
+            f"QBF played Black at {last['position']} — your turn (White). "
+            f"You have {budget['your_moves_left']} move(s) left."
         )
     elif your_turn:
-        turn_hint = "Your turn — play as White (click a cell)."
+        turn_hint = (
+            f"Your turn (White) — {budget['your_moves_left']} move(s) left."
+        )
     else:
-        turn_hint = f"Opponent’s turn — Black ({mode})…"
+        turn_hint = (
+            f"Opponent’s turn — Black ({mode}); "
+            f"{budget['black_moves_left']} Black move(s) left…"
+        )
 
     return {
         "session": sess["session"],
@@ -153,6 +200,7 @@ def public_grid(sess: dict) -> dict:
         "moves_played": sess["moves_played"],
         "last_ai": sess.get("last_ai"),
         "message": sess.get("message"),
+        **budget,
         "play_mode": mode,
         "human_color": human,
         "ai_color": ai,

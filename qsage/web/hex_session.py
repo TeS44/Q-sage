@@ -60,6 +60,62 @@ def new_hex_session(rel_path: str) -> dict:
     }
 
 
+def _hex_move_budget(sess: dict) -> dict:
+    """
+    Depth = total plies (half-moves), not full turns.
+
+    Example depth 5 with Black on t1,t3,t5:
+      Black 3 moves, White (you) 2 moves.
+    """
+    times = list(sess.get("times") or [])
+    black_turns = set(sess.get("black_turns") or [])
+    depth = int(sess.get("depth_bound") or len(times) or 0)
+    if times and black_turns:
+        schedule = ["B" if t in black_turns else "W" for t in times]
+    else:
+        # fallback: alternate, Black first
+        schedule = ["B" if i % 2 == 0 else "W" for i in range(depth)]
+    # pad/truncate to depth
+    if len(schedule) < depth:
+        schedule = schedule + [
+            "B" if (len(schedule) + i) % 2 == 0 else "W"
+            for i in range(depth - len(schedule))
+        ]
+    schedule = schedule[:depth]
+
+    black_total = schedule.count("B")
+    white_total = schedule.count("W")
+    played = int(sess.get("moves_played") or 0)
+    remaining_schedule = schedule[played:]
+    black_left = remaining_schedule.count("B")
+    white_left = remaining_schedule.count("W")
+    human = sess.get("human_color") or "W"
+    ai = sess.get("ai_color") or "B"
+    your_total = white_total if human == "W" else black_total
+    your_left = white_left if human == "W" else black_left
+    opp_total = black_total if ai == "B" else white_total
+    opp_left = black_left if ai == "B" else white_left
+
+    return {
+        "depth_plies": depth,
+        "depth_explain": (
+            f"Depth {depth} = {depth} half-moves total "
+            f"(Black {black_total}, White {white_total}). "
+            f"You (White) get {your_total} move(s)."
+        ),
+        "schedule": schedule,
+        "black_moves_total": black_total,
+        "white_moves_total": white_total,
+        "black_moves_left": black_left,
+        "white_moves_left": white_left,
+        "your_moves_total": your_total,
+        "your_moves_left": your_left,
+        "opponent_moves_total": opp_total,
+        "opponent_moves_left": opp_left,
+        "plies_left": max(0, depth - played),
+    }
+
+
 def public_hex(sess: dict) -> dict:
     # Keep winning_path up to date whenever Black has connected
     if not sess.get("winning_path"):
@@ -80,6 +136,7 @@ def public_hex(sess: dict) -> dict:
         "random": "Random",
         "none": "— (manual / both sides)",
     }.get(mode, mode)
+    budget = _hex_move_budget(sess)
     your_turn = (not sess["finished"]) and sess["to_move"] == human
     last = sess.get("last_ai") or {}
     last_pos = last.get("position")
@@ -89,18 +146,27 @@ def public_hex(sess: dict) -> dict:
         turn_hint = f"Game over" + (f" — {sess['winner']}" if sess.get("winner") else "")
     elif your_turn and last_pos and last.get("color") == "B":
         turn_hint = (
-            f"QBF played Black at {last_pos} — your turn (White). Click an empty hex."
+            f"QBF played Black at {last_pos} — your turn (White). "
+            f"You have {budget['your_moves_left']} move(s) left."
         )
     elif your_turn:
-        turn_hint = "Your turn — play as White. Click an empty hex."
+        turn_hint = (
+            f"Your turn (White) — {budget['your_moves_left']} move(s) left. "
+            "Click an empty hex."
+        )
     else:
-        turn_hint = f"Opponent’s turn — Black ({opp_name}) is moving…"
+        turn_hint = (
+            f"Opponent’s turn — Black ({opp_name}); "
+            f"Black has {budget['black_moves_left']} move(s) left…"
+        )
 
     msg = sess.get("message")
     if your_turn and last_pos and last.get("color") == "B":
         msg = (
-            f"Black opened at {last_pos} via {last_mode}. "
-            f"You are White — it is your turn."
+            f"Black played at {last_pos} via {last_mode}. "
+            f"You are White — {budget['your_moves_left']} move(s) remaining "
+            f"(depth {budget['depth_plies']} plies: "
+            f"Black {budget['black_moves_total']}, White {budget['white_moves_total']})."
         )
 
     return {
@@ -115,6 +181,7 @@ def public_hex(sess: dict) -> dict:
         "moves_played": sess["moves_played"],
         "last_ai": sess.get("last_ai"),
         "message": msg,
+        **budget,
         "positions": list(sess["positions"]),
         "neighbours": {
             k: list(v) for k, v in (sess.get("neighbours") or {}).items()
