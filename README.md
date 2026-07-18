@@ -2,6 +2,19 @@
 QBF encoder for various 2-player games including Positional games (like hex), Connect4, Breakthrough, Domineering etc.
 Generates lifted QBF encodings for finding winning strategies of bounded depth.
 
+## New package (`qsage/`) — rewrite in progress
+
+Smaller modular code for students and future work. See `docs/DESIGN.md`.  
+Legacy `Q-sage.py` remains the reference encoder until encodings are ported.
+
+```bash
+pip install -e ".[dev]"
+qsage parse --domain Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig \
+            --problem Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_9_tic.ig
+qsage parse --problem Benchmarks/B-Hex/hein_04_3x3-05.pg
+pytest tests/parse -q
+```
+
 ## Positional Games, lifted Hex encodings:
 ## Usage:
 
