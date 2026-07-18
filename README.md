@@ -93,7 +93,9 @@ qsage parse \
 qsage parse --problem Benchmarks/B-Hex/hein_04_3x3-05.pg
 ```
 
-### Encode (grid paper encoding: bwnib)
+### Encode
+
+**Grid (bwnib):**
 
 ```bash
 qsage encode \
@@ -101,6 +103,17 @@ qsage encode \
   --problem Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_3_domino.ig \
   -e bwnib --normalize --out out.qcir
 ```
+
+**Hex positional (pg / cp / ibign):**
+
+```bash
+qsage encode --problem Benchmarks/B-Hex/hein_04_3x3-05.pg -e pg --out hex.qcir
+qsage encode --problem Benchmarks/B-Hex/hein_04_3x3-05.pg -e cp --out hex_cp.qcir
+qsage encode --problem Benchmarks/B-Hex/hein_04_3x3-05.pg -e ibign --out hex_ibign.qcir
+```
+
+Goldens live under `Benchmarks/positional_goldens/`. Regenerate with  
+`PYTHONPATH=legacy python3 scripts/generate_positional_goldens.py`.
 
 ### Solve
 
@@ -122,10 +135,14 @@ qsage solve --qcir path/to/file.qcir --backend bloqqer+caqe --timeout 120
 
 `SAT` = first player has a winning strategy of that depth; `UNSAT` = none.
 
-### Paper Table 2 checks
+### Paper checks
 
 ```bash
+# Grid games (SAT 2023 Table 2)
 python scripts/run_paper_checks.py --backend qubi
+
+# Positional Hex (Hein sample × pg/cp/ibign)
+python scripts/run_positional_paper_checks.py --encoding all
 ```
 
 ---

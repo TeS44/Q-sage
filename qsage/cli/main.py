@@ -31,19 +31,22 @@ def cmd_play(args: argparse.Namespace) -> int:
 
 
 def cmd_solve(args: argparse.Namespace) -> int:
-    from qsage.encode import encode_bwnib
+    from qsage.encode import POSITIONAL_ENCODINGS, encode_bwnib, encode_positional
     from qsage.solve import solve_qcir_bloqqer_caqe, solve_qcir_qubi
     from qsage.solve.result import Status
 
     if args.qcir:
         qcir = Path(args.qcir).read_text(encoding="utf-8")
-    elif args.domain and args.problem:
-        if args.encoding != "bwnib":
-            print("only -e bwnib supported for encode+solve", file=sys.stderr)
-            return 2
+    elif args.encoding in POSITIONAL_ENCODINGS and args.problem:
+        qcir = encode_positional(args.problem, args.encoding)
+    elif args.encoding == "bwnib" and args.domain and args.problem:
         qcir = encode_bwnib(args.domain, args.problem)
     else:
-        print("solve needs --qcir or (--domain and --problem)", file=sys.stderr)
+        print(
+            "solve needs --qcir, or (--domain/--problem for bwnib), "
+            "or (--problem for pg|cp|ibign)",
+            file=sys.stderr,
+        )
         return 2
 
     if args.backend == "qubi":
@@ -63,16 +66,32 @@ def cmd_solve(args: argparse.Namespace) -> int:
 
 
 def cmd_encode(args: argparse.Namespace) -> int:
-    from qsage.encode import encode_bwnib, normalize_qcir, qcir_to_qdimacs
+    from qsage.encode import (
+        POSITIONAL_ENCODINGS,
+        encode_bwnib,
+        encode_positional,
+        normalize_qcir,
+        qcir_to_qdimacs,
+    )
 
-    if args.encoding != "bwnib":
-        print(f"unsupported encoding {args.encoding!r} (only bwnib for now)", file=sys.stderr)
-        return 2
-    if not args.domain or not args.problem:
-        print("encode needs --domain and --problem", file=sys.stderr)
+    if args.encoding == "bwnib":
+        if not args.domain or not args.problem:
+            print("bwnib encode needs --domain and --problem", file=sys.stderr)
+            return 2
+        qcir = encode_bwnib(args.domain, args.problem)
+    elif args.encoding in POSITIONAL_ENCODINGS:
+        if not args.problem:
+            print(f"{args.encoding} encode needs --problem (.pg)", file=sys.stderr)
+            return 2
+        qcir = encode_positional(args.problem, args.encoding)
+    else:
+        print(
+            f"unsupported encoding {args.encoding!r} "
+            f"(bwnib | {' | '.join(sorted(POSITIONAL_ENCODINGS))})",
+            file=sys.stderr,
+        )
         return 2
 
-    qcir = encode_bwnib(args.domain, args.problem)
     if args.format == "qdimacs":
         text = qcir_to_qdimacs(qcir)
     else:
@@ -133,9 +152,17 @@ def main(argv: list[str] | None = None) -> None:
     p.set_defaults(func=cmd_parse)
 
     e = sub.add_parser("encode", help="Generate QCIR/QDIMACS (paper encodings)")
-    e.add_argument("--domain", required=True, help="BDDL domain (.ig)")
-    e.add_argument("--problem", required=True, help="BDDL problem (.ig or hex .pg)")
-    e.add_argument("-e", "--encoding", default="bwnib", help="encoding (default: bwnib)")
+    e.add_argument("--domain", help="BDDL domain (.ig) — required for bwnib")
+    e.add_argument(
+        "--problem",
+        help="BDDL problem (.ig) or positional Hex (.pg)",
+    )
+    e.add_argument(
+        "-e",
+        "--encoding",
+        default="bwnib",
+        help="bwnib (grid) | pg | cp | ibign (Hex positional)",
+    )
     e.add_argument(
         "--format",
         choices=("qcir", "qdimacs"),
@@ -152,9 +179,14 @@ def main(argv: list[str] | None = None) -> None:
 
     s = sub.add_parser("solve", help="Solve QCIR with QuBi or Bloqqer+CAQE")
     s.add_argument("--qcir", help="existing QCIR file (e.g. golden)")
-    s.add_argument("--domain", help="BDDL domain (encode then solve)")
-    s.add_argument("--problem", help="BDDL problem")
-    s.add_argument("-e", "--encoding", default="bwnib")
+    s.add_argument("--domain", help="BDDL domain (bwnib encode then solve)")
+    s.add_argument("--problem", help="BDDL problem or Hex .pg")
+    s.add_argument(
+        "-e",
+        "--encoding",
+        default="bwnib",
+        help="bwnib | pg | cp | ibign when encoding from files",
+    )
     s.add_argument(
         "--backend",
         default="qubi",

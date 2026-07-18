@@ -13,14 +13,14 @@ Goldens: `Benchmarks/SAT2023_GDDL/QBF_instances/**/*_bwnib.qcir`
 
 ## Positional / Hex — arXiv:2301.07345
 
-| Paper family | Likely legacy `-e` | Priority |
-|--------------|--------------------|----------|
-| Lifted neighbor / path (LN) | `pg`, `ibign` | High — next port |
-| Compact / stateless neighbor (SN) | `cp`, `ntpg` | High |
-| Explicit goal lifted (LA) | `eg` / related | Medium |
-| Stateless explicit (SA) | various | Medium |
+| Paper family | Legacy `-e` | `qsage` status |
+|--------------|-------------|----------------|
+| Lifted neighbor / path (LN) | `pg`, `ibign` | **Supported** + goldens |
+| Compact / stateless (SN) | `cp` | **Supported** + goldens |
+| Explicit goal / other | `eg`, `ntpg`, … | Still only in `legacy/` |
 
-These still live only under `legacy/q_encodings/`. Port when working on issue #7.
+Goldens: `Benchmarks/positional_goldens/{pg,cp,ibign}/` (regenerate: `scripts/generate_positional_goldens.py`).  
+Solver notes: `docs/POSITIONAL_RESULTS.md`.
 
 ## Do not port (unless a paper table needs them)
 
