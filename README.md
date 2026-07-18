@@ -206,14 +206,23 @@ qsage cert validate -- …             # passthrough to SQval interactive_valida
 DepQBF source: [lonsing/depqbf](https://github.com/lonsing/depqbf) · QRPcert: [fmv.jku.at/qrpcert](https://fmv.jku.at/qrpcert/)  
 Details: [`docs/CERTIFICATES.md`](docs/CERTIFICATES.md) · [SQval](https://github.com/irfansha/SQval) · [paper](https://drops.dagstuhl.de/storage/00lipics/lipics-vol271-sat2023/LIPIcs.SAT.2023.24/LIPIcs.SAT.2023.24.pdf)
 
-### Web UI (local)
+### Web UI (local) — issue #3
 
 ```bash
+pip install -e ".[play]"   # python-sat for certificate strategy play
 qsage web
 # open http://127.0.0.1:8765/
 ```
 
-Hex board play (click cells, optional QuBi check on the original puzzle). Hybrid / partial-certificate play is on the SQval CLI (`qsage cert hybrid`); web mid-game cert play is next.
+| Mode | What it does |
+|------|----------------|
+| **Hex** (B-Hex + GDDL) | Click cells; opponent random / QBF-guided Black |
+| **QBF from start** | QuBi on `pg` encoding of the puzzle |
+| **QBF mid-game** | Re-encode residual board + remaining depth |
+| **Certificates** | Play vs precomputed winning strategy (CNF + meta) |
+| **Grid instances** | “Black wins?” via bwnib + QuBi |
+
+From-scratch encoders (experimental) live under `qsage/scratch/` — separate from this play path.
 
 ---
 
