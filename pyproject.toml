@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qsage"
+version = "0.2.0"
+description = "QBF encodings for 2-player board games (Hex, Breakthrough, HTTT, …)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Q-sage contributors" }]
+dependencies = [
+    "lark>=1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+web = [
+    # reserved for issue #3 localhost UI
+]
+
+[project.scripts]
+qsage = "qsage.cli.main:main"
+
+[tool.setuptools.packages.find]
+include = ["qsage*"]
+
+[tool.setuptools.package-data]
+qsage = ["parse/grammars/*.lark"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
