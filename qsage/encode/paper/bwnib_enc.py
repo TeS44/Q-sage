@@ -4,11 +4,11 @@
 
 import math
 
-import qsage.scratch.paper.adder as addc
-import qsage.scratch.paper.less_than as lsc
-from qsage.scratch.paper.gates import GatesGen as ggen
-from qsage.scratch.paper.gates import GatesGen as uggen
-from qsage.scratch.paper.vars import VarDispatcher as vd
+import qsage.encode.paper.adder as addc
+import qsage.encode.paper.less_than as lsc
+from qsage.encode.paper.gates import GatesGen as ggen
+from qsage.encode.paper.gates import GatesGen as uggen
+from qsage.encode.paper.vars import VarDispatcher as vd
 
 
 class BlackWhiteNestedIndexBased:

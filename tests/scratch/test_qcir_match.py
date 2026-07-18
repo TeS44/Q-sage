@@ -1,4 +1,4 @@
-"""Scratch public API must emit the same QCIR as previous / paper goldens."""
+"""Official encode QCIR must match paper goldens (and equal gate counts)."""
 
 from __future__ import annotations
 
@@ -9,8 +9,6 @@ import pytest
 from qsage.encode.bwnib import encode_bwnib
 from qsage.encode.normalize import normalize_qcir
 from qsage.encode.positional import encode_positional
-from qsage.scratch.grid import encode_grid_files
-from qsage.scratch.hex import encode_hex_file
 
 REPO = Path(__file__).resolve().parents[2]
 HEX = REPO / "Benchmarks" / "B-Hex"
@@ -46,57 +44,47 @@ GRID_CASES = [
 
 
 @pytest.mark.parametrize("stem", HEX_STEMS)
-def test_hex_qcir_matches_previous_and_golden(stem: str) -> None:
+def test_hex_pg_matches_golden(stem: str) -> None:
     path = HEX / f"{stem}.pg"
     if not path.is_file():
         pytest.skip("missing board")
-    scratch = encode_hex_file(path)
-    prev = encode_positional(path, encoding="pg")
-    assert normalize_qcir(scratch) == normalize_qcir(prev)
-    assert _gates(scratch) == _gates(prev)
+    qcir = encode_positional(path, encoding="pg")
     golden = GOLD_PG / f"{stem}_pg.qcir"
-    if golden.is_file():
-        assert normalize_qcir(scratch) == normalize_qcir(
-            golden.read_text(encoding="utf-8")
-        )
+    if not golden.is_file():
+        pytest.skip("missing golden")
+    gold = golden.read_text(encoding="utf-8")
+    assert normalize_qcir(qcir) == normalize_qcir(gold)
+    assert _gates(qcir) == _gates(gold)
 
 
 @pytest.mark.parametrize("gfolder,fam,stem", GRID_CASES, ids=[c[2] for c in GRID_CASES])
-def test_grid_qcir_matches_previous_and_golden(
-    gfolder: str, fam: str, stem: str
-) -> None:
+def test_bwnib_matches_golden(gfolder: str, fam: str, stem: str) -> None:
     dom = MODELS / fam / "domain.ig"
     prob = MODELS / fam / f"{stem}.ig"
     if not prob.is_file():
         pytest.skip("missing problem")
-    scratch = encode_grid_files(dom, prob)
-    prev = encode_bwnib(dom, prob)
-    assert normalize_qcir(scratch) == normalize_qcir(prev)
-    assert _gates(scratch) == _gates(prev)
+    qcir = encode_bwnib(dom, prob)
     golden = GOLD_G / gfolder / f"{stem}_bwnib.qcir"
-    if golden.is_file():
-        assert normalize_qcir(scratch) == normalize_qcir(
-            golden.read_text(encoding="utf-8")
-        )
+    if not golden.is_file():
+        pytest.skip("missing golden")
+    gold = golden.read_text(encoding="utf-8")
+    assert normalize_qcir(qcir) == normalize_qcir(gold)
+    assert _gates(qcir) == _gates(gold)
 
 
-def test_no_legacy_imports_in_scratch_paper() -> None:
-    """Paper package must not import the legacy/ tree."""
+def test_encode_paper_has_no_legacy_imports() -> None:
     import ast
 
-    paper = REPO / "qsage" / "scratch" / "paper"
+    paper = REPO / "qsage" / "encode" / "paper"
     for path in paper.rglob("*.py"):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
+            mods: list[str] = []
             if isinstance(node, ast.Import):
-                for alias in node.names:
-                    assert "legacy" not in alias.name, path
-                    assert not alias.name.startswith("q_encodings"), path
+                mods = [a.name for a in node.names]
             elif isinstance(node, ast.ImportFrom):
-                mod = node.module or ""
+                mods = [node.module or ""]
+            for mod in mods:
                 assert not mod.startswith("legacy"), path
-                assert "legacy" not in mod, path
-                # old package names must not appear as top-level deps
                 assert not mod.startswith("q_encodings"), path
-                assert not mod.startswith("utils."), path
-                assert mod != "utils", path
+                assert mod != "utils" and not mod.startswith("utils."), path

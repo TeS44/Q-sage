@@ -12,7 +12,20 @@ QBF encodings for **2-player board games** (Hex, Harary’s Tic-Tac-Toe, Breakth
 
 Papers: [arXiv:2303.16949](https://arxiv.org/abs/2303.16949) · [arXiv:2301.07345](https://arxiv.org/abs/2301.07345) · [certificates](https://doi.org/10.4230/LIPIcs.SAT.2023.24)
 
-Docs: [`docs/DESIGN.md`](docs/DESIGN.md) · [`docs/ISSUES.md`](docs/ISSUES.md) · [`docs/ENCODINGS.md`](docs/ENCODINGS.md) · [`docs/SCRATCH.md`](docs/SCRATCH.md) · [`legacy/README.md`](legacy/README.md)
+Docs: [`docs/DESIGN.md`](docs/DESIGN.md) · [`docs/ISSUES.md`](docs/ISSUES.md) · [`docs/ENCODINGS.md`](docs/ENCODINGS.md) · [`legacy/README.md`](legacy/README.md)
+
+### Layout
+
+| Path | Role |
+|------|------|
+| **`qsage/`** | **Official package** — encode, solve, web, CLI |
+| `qsage/encode/` | Paper encodings: **bwnib** + **pg** via `encode/paper/` (QCIR = goldens) |
+| `qsage/web/` | Browser play (`qsage web`) — uses `qsage.encode` + QuBi |
+| **`legacy/`** | Original tree kept for **reference** / regenerating goldens / `cp`+`ibign` |
+| `Benchmarks/` | GDDL models, Hex boards, QCIR goldens |
+
+Official APIs: `qsage.encode.encode_bwnib`, `qsage.encode.encode_positional` (and `qsage encode` CLI).  
+The web UI uses the same encode path.
 
 ---
 
@@ -178,7 +191,7 @@ Hard-refresh the browser (`Cmd+Shift+R`) after UI updates.
 | **Solve** | QuBi on the original `pg` / `bwnib` instance |
 | **Catalog** | `Benchmarks/playable_qbf.json` — regenerate with `python scripts/scan_playable_qbf.py` |
 
-Uses **`qsage.encode`** (paper/legacy parity). API: `/api/domains`, `/api/new`, `/api/move`, `/api/ai`, `/api/solve` (see `tests/web/`).
+Uses **`qsage.encode`** (official paper QCIR) + QuBi. API: `/api/domains`, `/api/new`, `/api/move`, `/api/ai`, `/api/solve` (see `tests/web/`).
 
 ### 2. Terminal play (optional)
 

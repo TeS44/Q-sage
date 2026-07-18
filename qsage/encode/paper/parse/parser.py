@@ -3,9 +3,9 @@
 # Irfansha Shaik, 13.08.2021, Aarhus
 
 
-import qsage.scratch.paper.stuttering_bounds as sb
+import qsage.encode.paper.stuttering_bounds as sb
 
-import qsage.scratch.paper.parse.action as action_gen
+import qsage.encode.paper.parse.action as action_gen
 
 # Board vertexs are numbered from 0
 

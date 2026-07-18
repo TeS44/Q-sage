@@ -1,4 +1,4 @@
-"""QCIR encodings (paper keep-list)."""
+"""QCIR encodings (official paper keep-list: bwnib + positional)."""
 
 from qsage.encode.bwnib import encode_bwnib, encode_bwnib_normalized
 from qsage.encode.normalize import normalize_qcir

@@ -1,17 +1,16 @@
 """
-Paper board-game QBF encodings — readable package, **gate-identical QCIR**.
+Deprecated thin re-exports.
 
-* ``encode_hex_file`` — path-based Hex ``pg`` (arXiv:2301.07345)
-* ``encode_grid_files`` — nested ``bwnib`` (arXiv:2303.16949)
-
-Implementation lives in ``qsage.scratch.paper`` (self-contained algorithm;
-**no imports from ``legacy/``**).  Output matches paper goldens and
-``qsage.encode`` (same gate count ⇒ same solver times).
-
-``experimental/`` holds alternate pure builders that are *not* gate-identical.
+Official encodings live in ``qsage.encode`` (``encode_bwnib``,
+``encode_positional``).  ``legacy/`` is kept for reference only.
 """
 
-from qsage.scratch.grid import encode_grid_files
-from qsage.scratch.hex import encode_hex_file
+from qsage.encode.bwnib import encode_bwnib as encode_grid_files
+from qsage.encode.positional import encode_positional
+
+
+def encode_hex_file(path):  # type: ignore[no-untyped-def]
+    return encode_positional(path, encoding="pg")
+
 
 __all__ = ["encode_hex_file", "encode_grid_files"]
