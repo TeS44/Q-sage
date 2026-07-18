@@ -1,0 +1,58 @@
+// Positional / Hex .pg files (Hein puzzles, etc.)
+
+start: positional
+
+positional: section+
+
+section: black_initials
+       | white_initials
+       | times
+       | black_turns
+       | positions
+       | black_wins
+       | neighbours
+       | start_border
+       | end_border
+
+black_initials: _BLACKINIT id_block
+white_initials: _WHITEINIT id_block
+times: _TIMES time_block
+black_turns: _BLACKTURNS time_block | _BLACKTURN time_block
+positions: _POSITIONS id_block
+black_wins: _BLACKWINS win_block
+neighbours: _NEIGHBOURS neigh_block
+start_border: _STARTBORDER id_block
+end_border: _ENDBORDER id_block
+
+// One or more non-empty lines of ids (space-separated within a line).
+id_block: id_line+ _NL?
+time_block: time_line+ _NL?
+win_block: id_line* _NL?
+neigh_block: neigh_line+ _NL?
+
+id_line: _NL pos_id+
+time_line: _NL time_id+
+neigh_line: _NL pos_id pos_id+
+
+pos_id: POS
+time_id: TIME
+
+_BLACKINIT: "#blackinitials"
+_WHITEINIT: "#whiteinitials"
+_TIMES: "#times"
+_BLACKTURNS: "#blackturns"
+_BLACKTURN: "#blackturn"
+_POSITIONS: "#positions"
+_BLACKWINS: "#blackwins"
+_NEIGHBOURS: "#neighbours"
+_STARTBORDER: "#startboarder"
+_ENDBORDER: "#endboarder"
+
+POS: /[a-z][0-9]+/
+TIME: /t[0-9]+/
+
+COMMENT: /%[^\n]*/
+%ignore COMMENT
+%ignore /[ \t\f\r]+/
+
+_NL: /\n+/

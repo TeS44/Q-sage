@@ -1,0 +1,86 @@
+// BDDL / GDDL domain and problem files (.ig)
+// Dialect matches Q-sage Benchmarks (SAT 2023 GDDL models).
+// Rules/tokens starting with _ are omitted from the parse tree.
+
+start: domain | problem
+
+// Domain
+domain: black_actions_section white_actions_section
+
+black_actions_section: _BLACKACTIONS _NL action*
+white_actions_section: _WHITEACTIONS _NL action*
+
+action: _ACTION_KW NAME _NL _PARAMS_KW param_list _NL _PRE_KW condition _NL _EFF_KW condition _NL?
+
+param_list: _LP PARAM _COMMA PARAM _RP
+
+condition: _LP subcond+ _RP | subcond+
+
+subcond: _NOT _LP atom _RP -> not_atom
+       | _LP _NOT _LP atom _RP _RP -> not_atom_paren
+       | atom -> pos_atom
+
+atom: PRED _LP expr _COMMA expr _RP
+
+expr: PARAM OP INT -> var_offset
+    | PARAM -> var_plain
+    | BOUND -> bound_name
+    | INT -> const_int
+
+// Problem
+problem: boardsize_section init_section depth_section goals_section blackturn_section?
+
+boardsize_section: _BOARDSIZE _NL INT INT _NL?
+init_section: _INIT _NL init_atom* _NL?
+depth_section: _DEPTH _NL INT _NL?
+
+init_atom: PRED _LP INT _COMMA INT _RP
+
+goals_section: black_goals white_goals
+black_goals: _BLACKGOAL _NL goal_content
+white_goals: _WHITEGOAL _NL goal_content
+
+// Real goals, empty, or explicit False (Domineering / no-goal games).
+goal_content: false_goal | goal_lines
+false_goal: _FALSE _NL?
+goal_lines: goal_line*
+goal_line: subcond+ _NL
+
+// Optional: first player override (legacy "second" = White moves first conceptually).
+blackturn_section: _BLACKTURN _NL TURN_NAME _NL?
+
+_FALSE: "False"
+_BLACKTURN: "#blackturn"
+TURN_NAME: "first" | "second"
+
+// Literals as ignored (_-prefixed) terminals via rules
+_BLACKACTIONS: "#blackactions"
+_WHITEACTIONS: "#whiteactions"
+_BOARDSIZE: "#boardsize"
+_INIT: "#init"
+_DEPTH: "#depth"
+_BLACKGOAL: "#blackgoal"
+_WHITEGOAL: "#whitegoal"
+_ACTION_KW: ":action"
+_PARAMS_KW: ":parameters"
+_PRE_KW: ":precondition"
+_EFF_KW: ":effect"
+_NOT: "NOT"
+_LP: "("
+_RP: ")"
+_COMMA: ","
+
+// Tokens
+PRED.2: "open" | "black" | "white"
+PARAM.2: "?x" | "?y"
+BOUND.2: "xmin" | "xmax" | "ymin" | "ymax"
+OP: "+" | "-"
+NAME: /[A-Za-z_][A-Za-z0-9_\-]*/
+INT: /[0-9]+/
+
+COMMENT: /%[^\n]*/
+%ignore COMMENT
+%ignore /[ \t\f\r]+/
+
+// Underscore terminals are dropped entirely (not inlined).
+_NL: /\n+/
