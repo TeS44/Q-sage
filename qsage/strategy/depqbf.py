@@ -261,9 +261,12 @@ def generate_certificate_depqbf_qrp(
     if not qdimacs.is_file():
         return CertGenResult(False, None, None, f"missing qdimacs: {qdimacs}")
 
+    import uuid
+
     work = _REPO / "intermediate_files"
     work.mkdir(parents=True, exist_ok=True)
-    trace = work / "depqbf_qrp_trace.qrp"
+    # Unique trace file per call (parallel-safe)
+    trace = work / f"depqbf_qrp_trace_{uuid.uuid4().hex[:12]}.qrp"
     depqbf = _DEPQBF_CERT_DIR / "depqbf"
     qrpcert = _DEPQBF_CERT_DIR / "qrpcert"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -280,82 +283,91 @@ def generate_certificate_depqbf_qrp(
             "unavailable. Rebuild: bash scripts/setup_depqbf_cert.sh",
         )
 
-    if use_docker:
-        try:
-            rel_q = qdimacs.relative_to(_REPO)
-            rel_out = out.relative_to(_REPO)
-        except ValueError:
+    try:
+        if use_docker:
+            try:
+                rel_q = qdimacs.relative_to(_REPO)
+                rel_out = out.relative_to(_REPO)
+                rel_tr = trace.relative_to(_REPO)
+            except ValueError:
+                return CertGenResult(
+                    False,
+                    None,
+                    None,
+                    "for Docker, qdimacs and --out must live under the repo root",
+                )
+            flags = " ".join(_TRACE_FLAGS)
+            inner = (
+                "chmod +x solvers/depqbf_cert/depqbf solvers/depqbf_cert/qrpcert; "
+                f"./solvers/depqbf_cert/depqbf {flags} /work/{rel_q} "
+                f"> /work/{rel_tr}; "
+                "./solvers/depqbf_cert/qrpcert --aiger-ascii --simplify "
+                f"/work/{rel_tr} > /work/{rel_out}"
+            )
+            proc = subprocess.run(
+                [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "--platform",
+                    "linux/amd64",
+                    "-v",
+                    f"{_REPO}:/work",
+                    "-w",
+                    "/work",
+                    "ubuntu:22.04",
+                    "bash",
+                    "-c",
+                    inner,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=timeout + 60,
+            )
+            raw = (proc.stdout or "") + (proc.stderr or "")
+        else:
+            with open(trace, "w", encoding="utf-8") as tf:
+                p1 = subprocess.run(
+                    [str(depqbf), *_TRACE_FLAGS, str(qdimacs)],
+                    stdout=tf,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    timeout=timeout,
+                )
+            with open(out, "w", encoding="utf-8") as of:
+                p2 = subprocess.run(
+                    [str(qrpcert), "--aiger-ascii", "--simplify", str(trace)],
+                    stdout=of,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    timeout=max(60, timeout // 2),
+                )
+            raw = (p1.stderr or "") + (p2.stderr or "")
+
+        sat: bool | None = None
+        if trace.is_file():
+            t = trace.read_text(encoding="utf-8", errors="ignore")
+            if "r SAT" in t:
+                sat = True
+            elif "r UNSAT" in t:
+                sat = False
+
+        if out.is_file() and out.stat().st_size > 0:
             return CertGenResult(
-                False,
-                None,
-                None,
-                "for Docker, qdimacs and --out must live under the repo root",
+                True, out, sat, f"wrote AIGER certificate {out}", raw
             )
-        flags = " ".join(_TRACE_FLAGS)
-        inner = (
-            "chmod +x solvers/depqbf_cert/depqbf solvers/depqbf_cert/qrpcert; "
-            f"./solvers/depqbf_cert/depqbf {flags} /work/{rel_q} "
-            f"> intermediate_files/depqbf_qrp_trace.qrp; "
-            "./solvers/depqbf_cert/qrpcert --aiger-ascii --simplify "
-            f"intermediate_files/depqbf_qrp_trace.qrp > /work/{rel_out}"
+        return CertGenResult(
+            False,
+            out if out.is_file() else None,
+            sat,
+            "DepQBF+qrpcert did not produce a non-empty certificate",
+            raw,
         )
-        proc = subprocess.run(
-            [
-                "docker",
-                "run",
-                "--rm",
-                "--platform",
-                "linux/amd64",
-                "-v",
-                f"{_REPO}:/work",
-                "-w",
-                "/work",
-                "ubuntu:22.04",
-                "bash",
-                "-c",
-                inner,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=timeout + 60,
-        )
-        raw = (proc.stdout or "") + (proc.stderr or "")
-    else:
-        with open(trace, "w", encoding="utf-8") as tf:
-            p1 = subprocess.run(
-                [str(depqbf), *_TRACE_FLAGS, str(qdimacs)],
-                stdout=tf,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=timeout,
-            )
-        with open(out, "w", encoding="utf-8") as of:
-            p2 = subprocess.run(
-                [str(qrpcert), "--aiger-ascii", "--simplify", str(trace)],
-                stdout=of,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=max(60, timeout // 2),
-            )
-        raw = (p1.stderr or "") + (p2.stderr or "")
-
-    sat: bool | None = None
-    if trace.is_file():
-        t = trace.read_text(encoding="utf-8", errors="ignore")
-        if "r SAT" in t:
-            sat = True
-        elif "r UNSAT" in t:
-            sat = False
-
-    if out.is_file() and out.stat().st_size > 0:
-        return CertGenResult(True, out, sat, f"wrote AIGER certificate {out}", raw)
-    return CertGenResult(
-        False,
-        out if out.is_file() else None,
-        sat,
-        "DepQBF+qrpcert did not produce a non-empty certificate",
-        raw,
-    )
+    finally:
+        try:
+            trace.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def run_depqbf_partial(

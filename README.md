@@ -236,6 +236,9 @@ legacy/         # original code (reference only — see legacy/README.md)
 ## Tests
 
 ```bash
+pip install -e ".[dev]"   # includes pytest-xdist
+pytest tests/ -q -n auto  # parallel across cores (12 on this host)
+# serial (e.g. debugging):
 pytest tests/ -q
 ```
 

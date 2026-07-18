@@ -350,7 +350,10 @@ class Parse:
     # if index based games, we first combine the domain and problem files after computing the inferred index bounds:
     if (('ib' in  args.e) and args.game_type == 'general'):
       # assigning new intermediate path to combined problem file:
-      args.problem = 'intermediate_files/combined_input.ig'
+      # Keep a caller-provided unique path (e.g. qsage temp dir) so parallel
+      # pytest workers do not clobber intermediate_files/combined_input.ig.
+      if not str(getattr(args, "problem", "")).endswith("combined_input.ig"):
+        args.problem = 'intermediate_files/combined_input.ig'
       combine(args)
     #'''
 

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import os
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 
-from qsage.solve.docker_run import docker_available, run_in_linux
 from qsage.solve.result import SolveResult, Status
 
 _REPO = Path(__file__).resolve().parents[2]
@@ -46,10 +46,6 @@ def solve_qcir_qubi(
     timeout: int = 60,
 ) -> SolveResult:
     """Solve QCIR with QuBi natively (macOS/Linux). Reads QCIR directly."""
-    work = work_dir or (_REPO / "intermediate_files" / "solve")
-    work.mkdir(parents=True, exist_ok=True)
-    qcir_path = work / "instance.qcir"
-    qcir_path.write_text(qcir_text, encoding="utf-8")
     t0 = time.perf_counter()
 
     if not qubi_available():
@@ -60,29 +56,45 @@ def solve_qcir_qubi(
             message="QuBi binary missing at solvers/qubi/qubi (see scripts/build_qubi_macos.sh)",
         )
 
+    # Per-call temp dir by default so parallel pytest workers do not clobber
+    # a shared intermediate_files/solve/instance.qcir.
+    own_td: tempfile.TemporaryDirectory[str] | None = None
+    if work_dir is None:
+        own_td = tempfile.TemporaryDirectory(prefix="qsage_qubi_")
+        work = Path(own_td.name)
+    else:
+        work = work_dir
+        work.mkdir(parents=True, exist_ok=True)
+
     try:
-        proc = subprocess.run(
-            [str(_QUBI_BIN), "-v=0", "-w=1", str(qcir_path)],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-    except subprocess.TimeoutExpired:
+        qcir_path = work / "instance.qcir"
+        qcir_path.write_text(qcir_text, encoding="utf-8")
+        try:
+            proc = subprocess.run(
+                [str(_QUBI_BIN), "-v=0", "-w=1", str(qcir_path)],
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+        except subprocess.TimeoutExpired:
+            return SolveResult(
+                Status.TIMEOUT, "qubi", time.perf_counter() - t0, "timeout"
+            )
+        except OSError as e:
+            return SolveResult(
+                Status.ERROR,
+                "qubi",
+                time.perf_counter() - t0,
+                message=str(e),
+            )
+        raw = (proc.stdout or "") + (proc.stderr or "")
         return SolveResult(
-            Status.TIMEOUT, "qubi", time.perf_counter() - t0, "timeout"
-        )
-    except OSError as e:
-        return SolveResult(
-            Status.ERROR,
+            _parse_qubi(raw),
             "qubi",
             time.perf_counter() - t0,
-            message=str(e),
+            message=f"exit={proc.returncode}",
+            raw=raw[-4000:],
         )
-    raw = (proc.stdout or "") + (proc.stderr or "")
-    return SolveResult(
-        _parse_qubi(raw),
-        "qubi",
-        time.perf_counter() - t0,
-        message=f"exit={proc.returncode}",
-        raw=raw[-4000:],
-    )
+    finally:
+        if own_td is not None:
+            own_td.cleanup()

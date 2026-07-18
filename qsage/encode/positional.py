@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -21,9 +22,9 @@ _LEGACY = _REPO / "legacy"
 POSITIONAL_ENCODINGS = frozenset({"pg", "cp", "ibign"})
 
 
-def _legacy_args(problem: Path, encoding: str, work_out: Path) -> SimpleNamespace:
+def _legacy_args(problem: Path, encoding: str, work: Path) -> SimpleNamespace:
     """Defaults mirror legacy/Q-sage.py argparse (hex positional encode)."""
-    inter = _REPO / "intermediate_files"
+    work_out = work / f"pos_{encoding}.qcir"
     return SimpleNamespace(
         version=False,
         ib_domain="testcases/index_separate_inputs/domain.ig",
@@ -41,15 +42,15 @@ def _legacy_args(problem: Path, encoding: str, work_out: Path) -> SimpleNamespac
         run=0,
         encoding_format=1,
         encoding_out=str(work_out),
-        intermediate_encoding_out=str(work_out.with_suffix(".inter.qcir")),
-        certificate_out=str(inter / "certificate"),
+        intermediate_encoding_out=str(work / f"pos_{encoding}.inter.qcir"),
+        certificate_out=str(work / "certificate"),
         solver=2,
-        solver_out=str(inter / "solver_output"),
+        solver_out=str(work / "solver_output"),
         debug=-1,
         run_tests=0,
         qcir_viz=0,
         viz_testing=0,
-        viz_meta_data_out=str(inter / "viz_meta_out"),
+        viz_meta_data_out=str(work / "viz_meta_out"),
         seed=0,
         renumber_positions=0,
         restricted_position_constraints=0,
@@ -64,7 +65,7 @@ def _legacy_args(problem: Path, encoding: str, work_out: Path) -> SimpleNamespac
         force_white_player_invalid_or_stop=0,
         sort_internal_gates=0,
         preprocessing=2,
-        preprocessed_encoding_out=str(inter / "preprocessed_encoding"),
+        preprocessed_encoding_out=str(work / "preprocessed_encoding"),
         time_limit=1800,
         preprocessing_time_limit=900,
     )
@@ -89,18 +90,18 @@ def encode_positional(problem: str | Path, encoding: str = "pg") -> str:
         from parse.parser import Parse  # type: ignore
         from q_encodings.encoder import generate_encoding  # type: ignore
 
-        out = _REPO / "intermediate_files" / f"pos_{encoding}.qcir"
-        out.parent.mkdir(exist_ok=True)
-        args = _legacy_args(problem, encoding, out)
-        parsed = Parse(args)
-        if getattr(parsed, "unsolvable", 0) == 1:
-            raise RuntimeError("instance marked unsolvable")
-        encoding_obj = generate_encoding(parsed)
-        return encoding_to_qcir(
-            encoding_obj.quantifier_block,
-            encoding_obj.encoding,
-            encoding_obj.final_output_gate,
-        )
+        with tempfile.TemporaryDirectory(prefix="qsage_pos_") as td:
+            work = Path(td)
+            args = _legacy_args(problem, encoding, work)
+            parsed = Parse(args)
+            if getattr(parsed, "unsolvable", 0) == 1:
+                raise RuntimeError("instance marked unsolvable")
+            encoding_obj = generate_encoding(parsed)
+            return encoding_to_qcir(
+                encoding_obj.quantifier_block,
+                encoding_obj.encoding,
+                encoding_obj.final_output_gate,
+            )
     finally:
         os.chdir(prev_cwd)
         sys.path[:] = prev_path

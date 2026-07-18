@@ -88,11 +88,10 @@ def encode_bwnib(domain: str | Path, problem: str | Path) -> str:
 
         with tempfile.TemporaryDirectory(prefix="qsage_bwnib_") as td:
             work = Path(td)
-            inter = _REPO / "intermediate_files"
-            inter.mkdir(exist_ok=True)
             args = _legacy_args(domain, problem, work)
-            # Legacy Parse always writes combined input here:
-            args.problem = str(inter / "combined_input.ig")
+            # Per-call work dir (safe under pytest-xdist); never share
+            # intermediate_files/combined_input.ig across parallel workers.
+            args.problem = str(work / "combined_input.ig")
 
             parsed = Parse(args)
             if getattr(parsed, "unsolvable", 0) == 1:
