@@ -19,8 +19,17 @@ dependencies = [
 dev = [
     "pytest>=7.0",
 ]
+play = [
+    "python-sat>=0.1.8",  # general_interactive_play.py (certificate play)
+]
+viz = [
+    "pyvis>=0.3",  # optional QCIR circuit visualization
+]
 web = [
     # reserved for issue #3 localhost UI
+]
+all = [
+    "qsage[dev,play,viz]",
 ]
 
 [project.scripts]
