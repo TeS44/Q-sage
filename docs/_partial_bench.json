@@ -1,0 +1,1012 @@
+[
+  {
+    "key": "BSP/2x4_8",
+    "kind": "grid",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.11,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "B/2x4_13",
+    "kind": "grid",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 0.19,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/2x2_3_connect2",
+    "kind": "grid",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.06,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/3x3_3_connect2",
+    "kind": "grid",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.06,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/3x3_9_connect3",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 0.09,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "BSP/2x5_10",
+    "kind": "grid",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.27,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/4x4_3_connect2",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.04,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/4x4_9_connect3",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.2,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/5x5_3_connect2",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.07,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "BSP/2x6_14",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 1.25,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/5x5_9_connect3",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.86,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/6x6_3_connect2",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.06,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "B/3x6_9",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 1.58,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/2x2_2",
+    "kind": "grid",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.02,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/2x3_4",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.03,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/2x4_4",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.04,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/2x5_6",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 0.05,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/2x6_6",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.09,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/3x2_2",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.02,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/3x3_4",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.04,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "B/2x5_17",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 1.88,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/3x4_6",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.04,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/3x5_8",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.08,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/4x4_15_connect4",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 1.71,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/4x2_5",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 0.03,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "B/2x6_15",
+    "kind": "grid",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 2.0,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/3x6_6",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.09,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/4x3_7",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 0.08,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/4x4_8",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.1,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/5x2_6",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.06,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/5x3_8",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 0.1,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/4x5_11",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 0.59,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/5x4_10",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.63,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/6x2_6",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.09,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/6x3_10",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 0.24,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/6x6_9_connect3",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 1.75,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/5x5_11_connect4",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 3.93,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "BSP/3x6_10",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 4.63,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "BSP/3x4_12",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 6.35,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "EP/4x4_3_e-4-1_p-2-3",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.07,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "EP/4x4_21_e-4-1_p-1-2",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 6.95,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "B/3x5_11",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 11.79,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "EP-dual/4x4_10_e-4-1_p-2-3",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 0.5,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "EP-dual/4x4_2_e-4-1_p-1-2",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.07,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "C4/6x6_11_connect4",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 18.42,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "EP-dual/8x8_6_e-8-1_p-2-3",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 3.37,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/3x3_3_domino",
+    "kind": "grid",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.16,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/3x3_5_el",
+    "kind": "grid",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.17,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/3x3_9_elly",
+    "kind": "grid",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 0.29,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/3x3_9_fatty",
+    "kind": "grid",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 0.26,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/3x3_9_knobby",
+    "kind": "grid",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 0.3,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/3x3_9_tic",
+    "kind": "grid",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 0.33,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/3x3_9_tippy",
+    "kind": "grid",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.27,
+    "match_paper": "yes",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/4x6_12",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 108.81,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/6x4_12",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 134.29,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "B/3x4_19",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.19,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "BSP/3x5_12",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.24,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/4x4_3_domino",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.1,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/4x4_5_el",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.18,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/4x4_5_tic",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 0.21,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/4x4_7_elly",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 1.43,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/5x5_13",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.03,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/5x6_11",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.13,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/6x5_11",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.08,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "D/6x6_11",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.08,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "EP/8x8_11_e-8-1_p-2-3",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.09,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "hex/browne_5x5_07",
+    "kind": "hex",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 6.58,
+    "match_paper": "yes",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_04_3x3-03",
+    "kind": "hex",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 0.08,
+    "match_paper": "yes",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_04_3x3-05",
+    "kind": "hex",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.26,
+    "match_paper": "yes",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "EP/8x8_7_e-8-1_p-3-4",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.13,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "EP-dual/8x8_10_e-8-1_p-3-4",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.06,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_06_4x4-11",
+    "kind": "hex",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 2.61,
+    "match_paper": "yes",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "httt/4x4_11_knobby",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.09,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_07_4x4-07",
+    "kind": "hex",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 0.24,
+    "match_paper": "yes",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_06_4x4-13",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 10.72,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_07_4x4-09",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 1.31,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "httt/4x4_13_skinny",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.15,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_09_4x4-05",
+    "kind": "hex",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 0.13,
+    "match_paper": "yes",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_09_4x4-07",
+    "kind": "hex",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.19,
+    "match_paper": "yes",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "httt/4x4_15_fatty",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.09,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "httt/4x4_9_tippy",
+    "kind": "grid",
+    "paper_expect": "",
+    "status": "SAT",
+    "seconds": 154.4,
+    "match_paper": "n/a",
+    "source": "encode_bwnib",
+    "error": ""
+  },
+  {
+    "key": "hex/browne_5x5_09",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.14,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_02_5x5-11",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.19,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_12_4x4-05",
+    "kind": "hex",
+    "paper_expect": "UNSAT",
+    "status": "UNSAT",
+    "seconds": 0.16,
+    "match_paper": "yes",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_12_4x4-07",
+    "kind": "hex",
+    "paper_expect": "SAT",
+    "status": "SAT",
+    "seconds": 0.18,
+    "match_paper": "yes",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_02_5x5-13",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.14,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_03_6x6-13",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.18,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_03_6x6-15",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.13,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_05_6x6-11",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.16,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_05_6x6-13",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.13,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_14_5x5-07",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 9.05,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_13_5x5-07",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "UNSAT",
+    "seconds": 10.59,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_08_5x5-09",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.14,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_08_5x5-11",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.09,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_10_5x5-11",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.19,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_10_5x5-13",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.19,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_11_5x5-09",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "TIMEOUT",
+    "seconds": 600.19,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_18_7x7-15",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "UNKNOWN",
+    "seconds": 307.15,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_15_5x5-13",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "UNKNOWN",
+    "seconds": 435.86,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_17_6x6-15",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "UNKNOWN",
+    "seconds": 418.17,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  },
+  {
+    "key": "hex/hein_19_5x5-09",
+    "kind": "hex",
+    "paper_expect": "",
+    "status": "UNKNOWN",
+    "seconds": 289.76,
+    "match_paper": "n/a",
+    "source": "encode_pg",
+    "error": ""
+  }
+]

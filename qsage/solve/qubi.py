@@ -21,7 +21,8 @@ _QUBI_BIN = _REPO / "solvers" / "qubi" / "qubi"
 
 # Interactive / catalog defaults (seconds). Callers can override.
 DEFAULT_TIMEOUT = 3.0
-MAX_TIMEOUT = 600.0
+# Batch / paper benchmarks may pass 1–2h; web/catalog use small defaults.
+MAX_TIMEOUT = 7200.0
 
 
 def qubi_available() -> bool:
