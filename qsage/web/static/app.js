@@ -237,9 +237,20 @@ function renderHexSvg(cells) {
 
   const NS = "http://www.w3.org/2000/svg";
   while (svg.firstChild) svg.removeChild(svg.firstChild);
-  svg.setAttribute("viewBox", `0 0 ${maxX + size} ${maxY + size}`);
-  svg.setAttribute("width", String(Math.min(560, maxX + size)));
-  svg.setAttribute("height", String(Math.min(480, maxY + size)));
+  // viewBox set after borders (may expand); provisional size here
+  svg.setAttribute("viewBox", `0 0 ${maxX + size * 2} ${maxY + size * 2}`);
+  svg.setAttribute("width", String(Math.min(620, maxX + size * 2.5)));
+  svg.setAttribute("height", String(Math.min(540, maxY + size * 2.5)));
+
+  // Lighter board backdrop so gold/blue borders read clearly
+  const backdrop = document.createElementNS(NS, "rect");
+  backdrop.setAttribute("x", 0);
+  backdrop.setAttribute("y", 0);
+  backdrop.setAttribute("width", maxX + size * 3);
+  backdrop.setAttribute("height", maxY + size * 3);
+  backdrop.setAttribute("fill", "#2a3548");
+  backdrop.setAttribute("rx", "8");
+  svg.appendChild(backdrop);
 
   // Background diamond (board felt)
   const bg = document.createElementNS(NS, "polygon");
@@ -249,44 +260,93 @@ function renderHexSvg(cells) {
     center(maxC, maxR),
     center(0, maxR),
   ];
-  // expand slightly
   bg.setAttribute(
     "points",
-    corners
-      .map(([x, y], i) => {
-        const pad = size * 0.85;
-        // rough outward nudge
-        return `${x},${y}`;
-      })
-      .join(" ")
+    corners.map(([x, y]) => `${x},${y}`).join(" ")
   );
-  bg.setAttribute("fill", "#8b7355");
-  bg.setAttribute("opacity", "0.35");
+  bg.setAttribute("fill", "#c4a574");
+  bg.setAttribute("opacity", "0.45");
   svg.appendChild(bg);
 
-  function edgePolyline(labels, cls) {
-    const pts = labels
-      .map((lab) => centers[lab])
-      .filter(Boolean);
-    if (pts.length < 1) return null;
-    // Offset outward slightly for a border strip outside cells
-    const pl = document.createElementNS(NS, "polyline");
-    pl.setAttribute("points", pts.map(([x, y]) => `${x},${y}`).join(" "));
-    pl.setAttribute("class", cls);
-    svg.appendChild(pl);
-    return pts;
-  }
-  function edgeCaption(pts, text, cls) {
-    if (!pts || !pts.length) return;
+  /**
+   * Draw a high-contrast goal border outside the edge cells.
+   * side: 'N'|'S'|'W'|'E' approx for outward offset direction.
+   * kind: 'B' (gold/black) or 'W' (sky/white)
+   */
+  function drawGoalEdge(labels, kind, outward) {
+    const raw = labels.map((lab) => centers[lab]).filter(Boolean);
+    if (!raw.length) return null;
+    // Compute outward offset from board center
+    let bx = 0,
+      by = 0,
+      n = 0;
+    for (const p of Object.values(centers)) {
+      bx += p[0];
+      by += p[1];
+      n++;
+    }
+    bx /= n || 1;
+    by /= n || 1;
+    const mid0 = raw[Math.floor(raw.length / 2)];
+    let ox = mid0[0] - bx;
+    let oy = mid0[1] - by;
+    const len = Math.hypot(ox, oy) || 1;
+    const dist = size * 1.15;
+    ox = (ox / len) * dist;
+    oy = (oy / len) * dist;
+    if (outward === false) {
+      ox = -ox;
+      oy = -oy;
+    }
+    const pts = raw.map(([x, y]) => [x + ox, y + oy]);
+    const ptStr = pts.map(([x, y]) => `${x},${y}`).join(" ");
+
+    const glow = document.createElementNS(NS, "polyline");
+    glow.setAttribute("points", ptStr);
+    glow.setAttribute(
+      "class",
+      kind === "B" ? "edge-black-glow" : "edge-white-glow"
+    );
+    svg.appendChild(glow);
+
+    const main = document.createElementNS(NS, "polyline");
+    main.setAttribute("points", ptStr);
+    main.setAttribute("class", kind === "B" ? "edge-black" : "edge-white");
+    svg.appendChild(main);
+
+    const inner = document.createElementNS(NS, "polyline");
+    inner.setAttribute("points", ptStr);
+    inner.setAttribute(
+      "class",
+      kind === "B" ? "edge-black-inner" : "edge-white-inner"
+    );
+    svg.appendChild(inner);
+
+    // Badge pill with high contrast
     const mid = pts[Math.floor(pts.length / 2)];
+    const bw = kind === "B" ? 54 : 52;
+    const bh = 18;
+    const bgR = document.createElementNS(NS, "rect");
+    bgR.setAttribute("x", mid[0] - bw / 2);
+    bgR.setAttribute("y", mid[1] - bh / 2);
+    bgR.setAttribute("width", bw);
+    bgR.setAttribute("height", bh);
+    bgR.setAttribute("rx", "4");
+    bgR.setAttribute(
+      "class",
+      kind === "B" ? "edge-badge-bg-B" : "edge-badge-bg-W"
+    );
+    svg.appendChild(bgR);
     const t = document.createElementNS(NS, "text");
     t.setAttribute("x", mid[0]);
     t.setAttribute("y", mid[1]);
-    t.setAttribute("class", "edge-label " + cls);
-    t.setAttribute("text-anchor", "middle");
-    t.setAttribute("dominant-baseline", "central");
-    t.textContent = text;
+    t.setAttribute(
+      "class",
+      "edge-badge " + (kind === "B" ? "edge-badge-text-B" : "edge-badge-text-W")
+    );
+    t.textContent = kind === "B" ? "BLACK" : "WHITE";
     svg.appendChild(t);
+    return pts;
   }
 
   const sortByCol = (labs) =>
@@ -296,21 +356,12 @@ function renderHexSvg(cells) {
         (a, b) =>
           coords[a].col - coords[b].col || coords[a].row - coords[b].row
       );
-  const sortByRow = (labs) =>
-    labs
-      .filter((p) => centers[p])
-      .sort(
-        (a, b) =>
-          coords[a].row - coords[b].row || coords[a].col - coords[b].col
-      );
 
   // Black goal: start_border ↔ end_border (from instance file)
   const startEdge = sortByCol([...start]);
   const endEdge = sortByCol([...end]);
-  const startPts = edgePolyline(startEdge, "edge-black");
-  const endPts = edgePolyline(endEdge, "edge-black");
-  edgeCaption(startPts, "BLACK", "black");
-  edgeCaption(endPts, "BLACK", "black");
+  drawGoalEdge(startEdge, "B", true);
+  drawGoalEdge(endEdge, "B", true);
 
   // White goal sides of the rhombus (left / right letter columns)
   const leftEdge = positions
@@ -319,10 +370,13 @@ function renderHexSvg(cells) {
   const rightEdge = positions
     .filter((p) => coords[p] && coords[p].col === maxC)
     .sort((a, b) => coords[a].row - coords[b].row);
-  const leftPts = edgePolyline(leftEdge, "edge-white");
-  const rightPts = edgePolyline(rightEdge, "edge-white");
-  edgeCaption(leftPts, "WHITE", "white");
-  edgeCaption(rightPts, "WHITE", "white");
+  drawGoalEdge(leftEdge, "W", true);
+  drawGoalEdge(rightEdge, "W", true);
+
+  // Expand viewBox slightly so offset borders / badges aren't clipped
+  maxX += size * 2.2;
+  maxY += size * 2.2;
+  svg.setAttribute("viewBox", `0 0 ${maxX + size} ${maxY + size}`);
 
   const pathSet = new Set(state.winning_path || []);
   // Also compute client-side if Black connected but path not sent

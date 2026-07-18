@@ -174,28 +174,54 @@
     }
     #hexSvg .hex-label.onB { fill: #ccc; }
     #hexSvg .hex-label.onW { fill: #333; }
+    /* High-contrast goal borders (readable on dark UI) */
+    #hexSvg .edge-black-glow {
+      fill: none; stroke: #fbbf24; stroke-width: 22; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.55;
+    }
     #hexSvg .edge-black {
-      fill: none; stroke: #0a0a0a; stroke-width: 14; stroke-linecap: round;
-      stroke-linejoin: round; opacity: 0.95;
+      fill: none; stroke: #111; stroke-width: 12; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 1;
+    }
+    #hexSvg .edge-black-inner {
+      fill: none; stroke: #fbbf24; stroke-width: 3; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 1;
+    }
+    #hexSvg .edge-white-glow {
+      fill: none; stroke: #38bdf8; stroke-width: 22; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.5;
     }
     #hexSvg .edge-white {
-      fill: none; stroke: #f0ebe3; stroke-width: 14; stroke-linecap: round;
-      stroke-linejoin: round; opacity: 0.95;
+      fill: none; stroke: #f8fafc; stroke-width: 12; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 1;
     }
-    #hexSvg .edge-label {
-      font-size: 11px; font-weight: 700; font-family: system-ui, sans-serif;
-      pointer-events: none;
+    #hexSvg .edge-white-inner {
+      fill: none; stroke: #0ea5e9; stroke-width: 3; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 1;
     }
-    #hexSvg .edge-label.black { fill: #ddd; }
-    #hexSvg .edge-label.white { fill: #c4b8a0; }
+    #hexSvg .edge-badge {
+      font-size: 12px; font-weight: 800; font-family: system-ui, sans-serif;
+      pointer-events: none; text-anchor: middle; dominant-baseline: central;
+    }
+    #hexSvg .edge-badge-bg-B { fill: #fbbf24; stroke: #111; stroke-width: 1.5; }
+    #hexSvg .edge-badge-bg-W { fill: #e0f2fe; stroke: #0369a1; stroke-width: 1.5; }
+    #hexSvg .edge-badge-text-B { fill: #111; }
+    #hexSvg .edge-badge-text-W { fill: #0c4a6e; }
     #hexSvg .win-path {
       fill: none; stroke: #22c55e; stroke-width: 8; stroke-linecap: round;
       stroke-linejoin: round; opacity: 0.95;
       filter: drop-shadow(0 0 4px #22c55e);
     }
     #hexSvg .hex-cell.on-path { stroke: #22c55e; stroke-width: 3; }
-    #hexSvg .hex-cell.border-B { stroke: #111; stroke-width: 2.5; }
-    #hexSvg .hex-cell.border-W { stroke: #e8e0d4; stroke-width: 2.5; }
+    /* Border cells: strong colored outline */
+    #hexSvg .hex-cell.border-B {
+      stroke: #fbbf24; stroke-width: 3.5;
+      filter: drop-shadow(0 0 3px #fbbf24);
+    }
+    #hexSvg .hex-cell.border-W {
+      stroke: #38bdf8; stroke-width: 3.5;
+      filter: drop-shadow(0 0 3px #38bdf8);
+    }
     #hexSvg .coord {
       font-size: 12px; fill: var(--muted); font-family: system-ui, sans-serif;
       text-anchor: middle; dominant-baseline: central;
@@ -347,11 +373,11 @@
         <svg id="gridSvg" style="display:none" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
       <p class="hint" id="hexLegend" style="display:none">
-        <strong style="color:#eee">Black</strong> connects the <strong>dark</strong> borders
-        (start ↔ end).
-        <strong style="color:#c4b8a0">White</strong> (you) sits on the <strong>light</strong> sides
-        and tries to block.
-        A <span style="color:#22c55e">green path</span> appears when Black connects.
+        <span style="background:#fbbf24;color:#111;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700">BLACK</span>
+        gold edges = borders Black must connect.
+        <span style="background:#e0f2fe;color:#0c4a6e;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700">WHITE</span>
+        blue edges = White sides (you block).
+        <span style="color:#22c55e;font-weight:700">Green path</span> = Black has won.
       </p>
       <div class="hint" id="msg"></div>
       <div id="log"></div>
