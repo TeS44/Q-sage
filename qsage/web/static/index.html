@@ -123,8 +123,28 @@
     }
     #hexSvg .hex-label.onB { fill: #ccc; }
     #hexSvg .hex-label.onW { fill: #333; }
-    #hexSvg .edge-black { fill: none; stroke: #222; stroke-width: 10; stroke-linecap: round; opacity: 0.9; }
-    #hexSvg .edge-white { fill: none; stroke: #e8e0d4; stroke-width: 10; stroke-linecap: round; opacity: 0.95; }
+    #hexSvg .edge-black {
+      fill: none; stroke: #0a0a0a; stroke-width: 14; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.95;
+    }
+    #hexSvg .edge-white {
+      fill: none; stroke: #f0ebe3; stroke-width: 14; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.95;
+    }
+    #hexSvg .edge-label {
+      font-size: 11px; font-weight: 700; font-family: system-ui, sans-serif;
+      pointer-events: none;
+    }
+    #hexSvg .edge-label.black { fill: #ddd; }
+    #hexSvg .edge-label.white { fill: #c4b8a0; }
+    #hexSvg .win-path {
+      fill: none; stroke: #22c55e; stroke-width: 8; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.95;
+      filter: drop-shadow(0 0 4px #22c55e);
+    }
+    #hexSvg .hex-cell.on-path { stroke: #22c55e; stroke-width: 3; }
+    #hexSvg .hex-cell.border-B { stroke: #111; stroke-width: 2.5; }
+    #hexSvg .hex-cell.border-W { stroke: #e8e0d4; stroke-width: 2.5; }
     #hexSvg .coord {
       font-size: 12px; fill: var(--muted); font-family: system-ui, sans-serif;
       text-anchor: middle; dominant-baseline: central;
@@ -258,7 +278,11 @@
         <svg id="hexSvg" style="display:none" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
       <p class="hint" id="hexLegend" style="display:none">
-        Hex (Little-Golem style): dark edges = Black’s borders · light edges = White’s · click empty hex to play
+        <strong style="color:#eee">Black</strong> connects the <strong>dark</strong> borders
+        (start ↔ end).
+        <strong style="color:#c4b8a0">White</strong> (you) sits on the <strong>light</strong> sides
+        and tries to block.
+        A <span style="color:#22c55e">green path</span> appears when Black connects.
       </p>
       <div class="hint" id="msg"></div>
       <div id="log"></div>

@@ -61,6 +61,15 @@ def new_hex_session(rel_path: str) -> dict:
 
 
 def public_hex(sess: dict) -> dict:
+    # Keep winning_path up to date whenever Black has connected
+    if not sess.get("winning_path"):
+        wp = black_winning_path(sess)
+        if wp:
+            sess["winning_path"] = wp
+            if not sess.get("finished"):
+                sess["finished"] = True
+                sess["winner"] = "Black"
+
     mode = sess.get("play_mode") or "qbf"
     human = sess.get("human_color") or "W"
     ai = sess.get("ai_color") or "B"
@@ -107,6 +116,9 @@ def public_hex(sess: dict) -> dict:
         "last_ai": sess.get("last_ai"),
         "message": msg,
         "positions": list(sess["positions"]),
+        "neighbours": {
+            k: list(v) for k, v in (sess.get("neighbours") or {}).items()
+        },
         "start_border": list(sess.get("start_border") or []),
         "end_border": list(sess.get("end_border") or []),
         "play_mode": mode,
@@ -129,6 +141,19 @@ def public_hex(sess: dict) -> dict:
             and mode in ("qbf", "hybrid", "random")
             and sess["to_move"] == ai
         ),
+        "winning_path": list(sess.get("winning_path") or [])
+        if sess.get("finished") and sess.get("winner") == "Black"
+        else list(black_winning_path(sess) or []),
+        "black_borders": {
+            "start": list(sess.get("start_border") or []),
+            "end": list(sess.get("end_border") or []),
+            "goal": "Black connects start ↔ end borders (dark edges)",
+        },
+        "white_borders": {
+            "left": "first letter column (a…)",
+            "right": "last letter column",
+            "goal": "White blocks Black; White edges shown light",
+        },
     }
 
 
@@ -136,25 +161,44 @@ def open_cells(sess: dict) -> list[str]:
     return [p for p, v in sess["cells"].items() if v == "open"]
 
 
+def black_winning_path(sess: dict) -> list[str] | None:
+    """
+    Shortest Black path from start_border to end_border (cell labels), or None.
+    """
+    owned = {p for p, v in sess["cells"].items() if v == "B"}
+    starts = [p for p in (sess.get("start_border") or []) if p in owned]
+    ends = {p for p in (sess.get("end_border") or []) if p in owned}
+    if not starts or not ends:
+        return None
+    neigh = sess.get("neighbours") or {}
+    parent: dict[str, str | None] = {s: None for s in starts}
+    queue = list(starts)
+    found: str | None = None
+    while queue:
+        u = queue.pop(0)
+        if u in ends:
+            found = u
+            break
+        for v in neigh.get(u, []):
+            if v in owned and v not in parent:
+                parent[v] = u
+                queue.append(v)
+    if found is None:
+        return None
+    path = []
+    cur: str | None = found
+    while cur is not None:
+        path.append(cur)
+        cur = parent.get(cur)
+    path.reverse()
+    return path
+
+
 def _path_exists(sess: dict, color: str) -> bool:
-    """Black path start→end or White path (swap borders not defined — only Black win)."""
+    """Black path start→end (White win = Black fails to connect within bound)."""
     if color != "B":
         return False
-    owned = {p for p, v in sess["cells"].items() if v == "B"}
-    start = [p for p in sess.get("start_border") or [] if p in owned]
-    end = set(sess.get("end_border") or [])
-    neigh = sess.get("neighbours") or {}
-    stack = list(start)
-    seen = set(start)
-    while stack:
-        u = stack.pop()
-        if u in end:
-            return True
-        for v in neigh.get(u, []):
-            if v in owned and v not in seen:
-                seen.add(v)
-                stack.append(v)
-    return False
+    return black_winning_path(sess) is not None
 
 
 def apply_move(
@@ -194,13 +238,19 @@ def apply_move(
     sess["moves_played"] += 1
     sess["to_move"] = "W" if color == "B" else "B"
     # win / horizon
-    if _path_exists(sess, "B"):
+    bpath = black_winning_path(sess)
+    if bpath:
         sess["finished"] = True
         sess["winner"] = "Black"
+        sess["winning_path"] = bpath
+        sess["message"] = (
+            f"Black connected borders via {' → '.join(bpath)}"
+        )
     elif sess["moves_played"] >= sess["depth_bound"] or not open_cells(sess):
         sess["finished"] = True
         if not sess["winner"]:
             sess["winner"] = "White (Black failed to connect)"
+            sess["winning_path"] = None
 
 
 def random_move(sess: dict, color: str | None = None) -> str | None:

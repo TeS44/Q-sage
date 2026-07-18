@@ -259,35 +259,72 @@ function renderHexSvg(cells) {
   bg.setAttribute("opacity", "0.35");
   svg.appendChild(bg);
 
-  // Edge highlight lines for start/end borders (Black's goal sides)
   function edgePolyline(labels, cls) {
     const pts = labels
       .map((lab) => centers[lab])
-      .filter(Boolean)
-      .map(([x, y]) => `${x},${y}`);
-    if (pts.length < 2) return;
+      .filter(Boolean);
+    if (pts.length < 1) return null;
+    // Offset outward slightly for a border strip outside cells
     const pl = document.createElementNS(NS, "polyline");
-    pl.setAttribute("points", pts.join(" "));
+    pl.setAttribute("points", pts.map(([x, y]) => `${x},${y}`).join(" "));
     pl.setAttribute("class", cls);
     svg.appendChild(pl);
+    return pts;
   }
-  // Order start/end by col for a clean edge
+  function edgeCaption(pts, text, cls) {
+    if (!pts || !pts.length) return;
+    const mid = pts[Math.floor(pts.length / 2)];
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("x", mid[0]);
+    t.setAttribute("y", mid[1]);
+    t.setAttribute("class", "edge-label " + cls);
+    t.setAttribute("text-anchor", "middle");
+    t.setAttribute("dominant-baseline", "central");
+    t.textContent = text;
+    svg.appendChild(t);
+  }
+
   const sortByCol = (labs) =>
     labs
       .filter((p) => centers[p])
-      .sort((a, b) => coords[a].col - coords[b].col || coords[a].row - coords[b].row);
-  edgePolyline(sortByCol([...start]), "edge-black");
-  edgePolyline(sortByCol([...end]), "edge-black");
+      .sort(
+        (a, b) =>
+          coords[a].col - coords[b].col || coords[a].row - coords[b].row
+      );
+  const sortByRow = (labs) =>
+    labs
+      .filter((p) => centers[p])
+      .sort(
+        (a, b) =>
+          coords[a].row - coords[b].row || coords[a].col - coords[b].col
+      );
 
-  // White borders ≈ left (col=0) and right (col=maxC) sides of rhombus
+  // Black goal: start_border ↔ end_border (from instance file)
+  const startEdge = sortByCol([...start]);
+  const endEdge = sortByCol([...end]);
+  const startPts = edgePolyline(startEdge, "edge-black");
+  const endPts = edgePolyline(endEdge, "edge-black");
+  edgeCaption(startPts, "BLACK", "black");
+  edgeCaption(endPts, "BLACK", "black");
+
+  // White goal sides of the rhombus (left / right letter columns)
   const leftEdge = positions
     .filter((p) => coords[p] && coords[p].col === 0)
     .sort((a, b) => coords[a].row - coords[b].row);
   const rightEdge = positions
     .filter((p) => coords[p] && coords[p].col === maxC)
     .sort((a, b) => coords[a].row - coords[b].row);
-  edgePolyline(leftEdge, "edge-white");
-  edgePolyline(rightEdge, "edge-white");
+  const leftPts = edgePolyline(leftEdge, "edge-white");
+  const rightPts = edgePolyline(rightEdge, "edge-white");
+  edgeCaption(leftPts, "WHITE", "white");
+  edgeCaption(rightPts, "WHITE", "white");
+
+  const pathSet = new Set(state.winning_path || []);
+  // Also compute client-side if Black connected but path not sent
+  if (!pathSet.size) {
+    const bp = findBlackPath(cells, state);
+    bp.forEach((p) => pathSet.add(p));
+  }
 
   // Cells
   for (const p of positions) {
@@ -298,6 +335,13 @@ function renderHexSvg(cells) {
     let cls = "hex-cell open";
     if (v === "B" || v === "black") cls = "hex-cell B";
     else if (v === "W" || v === "white") cls = "hex-cell W";
+    if (pathSet.has(p)) cls += " on-path";
+    if (start.has(p) || end.has(p)) cls += " border-B";
+    else if (
+      (coords[p] && coords[p].col === 0) ||
+      (coords[p] && coords[p].col === maxC)
+    )
+      cls += " border-W";
     poly.setAttribute("class", cls);
     poly.dataset.pos = p;
     poly.setAttribute("title", p);
@@ -350,14 +394,26 @@ function renderHexSvg(cells) {
     }
   }
 
+  // Winning path polyline (on top of stones)
+  if (pathSet.size >= 2) {
+    const order = state.winning_path && state.winning_path.length
+      ? state.winning_path
+      : [...pathSet];
+    const pts = order
+      .map((p) => centers[p])
+      .filter(Boolean)
+      .map(([x, y]) => `${x},${y}`)
+      .join(" ");
+    if (pts) {
+      const pl = document.createElementNS(NS, "polyline");
+      pl.setAttribute("points", pts);
+      pl.setAttribute("class", "win-path");
+      svg.appendChild(pl);
+    }
+  }
+
   // Column letters along top (row 0)
   for (let c = 0; c <= maxC; c++) {
-    const lab = String.fromCharCode(97 + c) + "1";
-    if (!centers[lab] && c === 0) {
-      /* skip if no a1 */
-    }
-    const topLab = String.fromCharCode(97 + c) + "1";
-    // place letter above first row cell of this col if exists
     const any = positions.find(
       (p) => coords[p] && coords[p].col === c && coords[p].row === 0
     );
@@ -384,6 +440,46 @@ function renderHexSvg(cells) {
     t.textContent = String(r + 1);
     svg.appendChild(t);
   }
+}
+
+/** BFS Black path start_border → end_border using state.neighbours */
+function findBlackPath(cells, st) {
+  const owned = new Set(
+    Object.keys(cells).filter((p) => cells[p] === "B" || cells[p] === "black")
+  );
+  const starts = (st.start_border || []).filter((p) => owned.has(p));
+  const ends = new Set((st.end_border || []).filter((p) => owned.has(p)));
+  if (!starts.length || !ends.size) return [];
+  const neigh = st.neighbours || {};
+  const parent = {};
+  const q = [];
+  for (const s of starts) {
+    parent[s] = null;
+    q.push(s);
+  }
+  let found = null;
+  while (q.length) {
+    const u = q.shift();
+    if (ends.has(u)) {
+      found = u;
+      break;
+    }
+    for (const v of neigh[u] || []) {
+      if (owned.has(v) && !(v in parent)) {
+        parent[v] = u;
+        q.push(v);
+      }
+    }
+  }
+  if (!found) return [];
+  const path = [];
+  let cur = found;
+  while (cur != null) {
+    path.push(cur);
+    cur = parent[cur];
+  }
+  path.reverse();
+  return path;
 }
 
 function renderSquareBoard(cells) {
