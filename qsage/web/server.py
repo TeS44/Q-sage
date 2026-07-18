@@ -197,6 +197,14 @@ class Handler(BaseHTTPRequestHandler):
                 elif sess["play_mode"] == "random":
                     sess["message"] = "You are White · opponent Black (random)."
                 _SESSIONS[sess["session"]] = sess
+                # Black (AI) always opens on Hex when playing vs engine — do it
+                # server-side so the human's first click cannot place Black.
+                t_ai = 3.0
+                if sess["play_mode"] in ("qbf", "hybrid", "random"):
+                    try:
+                        hex_session.maybe_play_ai(sess, timeout=t_ai)
+                    except Exception:
+                        pass  # leave needs_ai_move for client retry
                 pub = hex_session.public_hex(sess)
                 pub["has_partial"] = has_partial(path)
                 self._json(200, pub)
@@ -232,36 +240,40 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 pos = body["position"]
                 mode = body.get("opponent") or sess.get("play_mode") or "qbf"
+                sess["play_mode"] = mode if mode in ("qbf", "hybrid", "random", "none") else sess.get("play_mode") or "qbf"
                 human = sess.get("human_color") or "W"
                 ai = sess.get("ai_color") or "B"
-                # Human may only move as their colour (White vs AI)
-                if sess["to_move"] != human and mode != "none":
-                    self._json(
-                        400,
-                        {
-                            "error": (
-                                f"Not your turn — you are "
-                                f"{'White' if human == 'W' else 'Black'}; "
-                                f"waiting for "
-                                f"{'Black' if ai == 'B' else 'White'} ({mode})"
-                            )
-                        },
-                    )
-                    return
-                hex_session.apply_move(sess, pos, as_human=True)
-                # After human White, engine Black replies
+                t_ai = float(body.get("timeout") or 2.0)
+
+                # If AI still to move (e.g. opening failed), play AI first
+                if (
+                    sess["play_mode"] in ("qbf", "hybrid", "random")
+                    and sess["to_move"] == ai
+                    and not sess["finished"]
+                ):
+                    hex_session.maybe_play_ai(sess, timeout=t_ai)
+                    if sess["to_move"] != human and not sess["finished"]:
+                        self._json(
+                            400,
+                            {
+                                "error": (
+                                    "Still opponent's turn (Black). "
+                                    "Wait for AI or click “AI / strategy move”."
+                                ),
+                                "state": hex_session.public_hex(sess),
+                            },
+                        )
+                        return
+
+                # Human places only White (forced in apply_move)
+                hex_session.apply_move(sess, pos, color=human, as_human=True)
+                # Black replies
                 if (
                     not sess["finished"]
                     and sess["to_move"] == ai
-                    and mode in ("hybrid", "qbf", "random")
+                    and sess["play_mode"] in ("hybrid", "qbf", "random")
                 ):
-                    t_ai = float(body.get("timeout") or 2.0)
-                    if mode == "hybrid":
-                        hex_session.ai_hybrid_black_move(sess, qbf_timeout=t_ai)
-                    elif mode == "qbf":
-                        hex_session.ai_qbf_black_move(sess, timeout=t_ai)
-                    elif mode == "random":
-                        hex_session.random_move(sess, ai)
+                    hex_session.maybe_play_ai(sess, timeout=t_ai)
                 self._json(200, hex_session.public_hex(sess))
                 return
 

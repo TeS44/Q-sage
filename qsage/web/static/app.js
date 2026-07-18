@@ -543,17 +543,26 @@ async function loadGame() {
   }
   const q = new URLSearchParams({ path: p.path, kind, mode });
   if (p.domain) q.set("domain_file", p.domain);
-  setBusy(true, "Loading…");
+  const needsOpeningAi =
+    kind === "hex" && (mode === "qbf" || mode === "hybrid" || mode === "random");
+  setBusy(
+    true,
+    needsOpeningAi ? "QuBi running — Black opens" : "Loading…"
+  );
   try {
+    // Server places Black's opening move before returning (vs AI modes)
     state = await api("/api/new?" + q);
     log(`Loaded [${mode}] ${p.label}`);
     log(
       `You are ${state.you_are || "White"} · opponent ${state.opponent_is || "Black"} (${state.opponent_engine || mode})`
     );
-    // Opening: Black (AI) moves first on Hex — play it before the human
-    if (state.needs_ai_move && kind === "hex") {
+    if (state.last_ai) {
+      log(
+        `Black opened → ${state.last_ai.position} (${state.last_ai.mode}) · you play White`
+      );
+    } else if (state.needs_ai_move && kind === "hex") {
+      // Fallback if server could not open
       setBusy(true, "QuBi running — Black opens");
-      log("Black (opponent) opens…");
       state = await api("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -564,13 +573,14 @@ async function loadGame() {
         }),
       });
       if (state.last_ai) {
-        log(
-          `Black opens → ${state.last_ai.position} (${state.last_ai.mode}) · your turn as White`
-        );
+        log(`Black opened → ${state.last_ai.position} · you play White`);
       }
     }
+    if (state.your_turn) {
+      log("Your turn — click an empty hex to play as White");
+    }
     if (mode === "certificate") {
-      log("Black (certificate) first: click “AI / strategy move”, then play White.");
+      log("Certificate: AI / strategy for Black, then you play White.");
     }
   } catch (e) {
     log("Load: " + e.message);
@@ -582,12 +592,20 @@ async function loadGame() {
 
 async function onCell(pos) {
   if (!state || busy) return;
-  // Only human’s colour may click
-  if (state.your_turn === false && state.kind !== "grid") {
+  // Only when it is the human's turn (White vs AI)
+  if (state.kind !== "grid" && state.your_turn === false) {
     log(
       state.turn_hint ||
-        `Not your turn — you are ${state.you_are || "White"}`
+        `Not your turn — you are ${state.you_are || "White"}; wait for Black`
     );
+    return;
+  }
+  if (
+    state.kind === "hex" &&
+    state.human_color === "W" &&
+    state.to_move === "B"
+  ) {
+    log("Black to move (opponent). Wait for the solver / AI.");
     return;
   }
   const opp =

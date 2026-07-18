@@ -135,20 +135,29 @@ def apply_move(
 ) -> None:
     if sess["finished"]:
         raise ValueError("game finished")
-    color = color or sess["to_move"]
-    if as_human:
-        human = sess.get("human_color") or "W"
-        if sess.get("play_mode") in ("qbf", "hybrid", "random") and color != human:
+    human = sess.get("human_color") or "W"
+    mode = sess.get("play_mode") or "qbf"
+    # Human clicks always place the human's colour (White vs AI) — never "whoever is to move".
+    if as_human and mode in ("qbf", "hybrid", "random"):
+        color = human
+    else:
+        color = color or sess["to_move"]
+    if as_human and mode in ("qbf", "hybrid", "random"):
+        if sess["to_move"] != human:
             raise ValueError(
-                f"You play as {human} ({'White' if human == 'W' else 'Black'}); "
-                "wait for the opponent"
+                f"Not your turn — you are {'White' if human == 'W' else 'Black'}; "
+                f"wait for {'Black' if human == 'W' else 'White'}"
             )
-        if color != human and sess.get("play_mode") != "none":
-            raise ValueError(f"not your color to move (you are {human})")
+        if color != human:
+            raise ValueError(
+                f"You play as {'White' if human == 'W' else 'Black'} only"
+            )
     if pos not in sess["cells"] or sess["cells"][pos] != "open":
         raise ValueError(f"illegal move {pos}")
     if color != sess["to_move"]:
-        raise ValueError(f"not {color}'s turn")
+        raise ValueError(
+            f"not {color}'s turn (to_move={sess['to_move']})"
+        )
     sess["cells"][pos] = color
     sess["history"].append((pos, color))
     sess["moves_played"] += 1
@@ -304,6 +313,24 @@ def ai_qbf_black_move(sess: dict, timeout: float = 2.0) -> str | None:
             sess["last_ai"] = {"color": "B", "position": pos, "mode": "qbf"}
             return pos
     return random_move(sess, "B")
+
+
+def maybe_play_ai(sess: dict, *, timeout: float = 2.0) -> str | None:
+    """
+    If it is the AI colour's turn under qbf/hybrid/random, play one AI move.
+    Used after load (Black opens) and after a human White move.
+    """
+    mode = sess.get("play_mode") or "qbf"
+    ai = sess.get("ai_color") or "B"
+    if sess.get("finished") or mode not in ("qbf", "hybrid", "random"):
+        return None
+    if sess.get("to_move") != ai:
+        return None
+    if mode == "hybrid":
+        return ai_hybrid_black_move(sess, qbf_timeout=timeout)
+    if mode == "qbf":
+        return ai_qbf_black_move(sess, timeout=timeout)
+    return random_move(sess, ai)
 
 
 def ai_hybrid_black_move(sess: dict, *, qbf_timeout: float = 2.0) -> str | None:
