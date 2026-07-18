@@ -161,7 +161,9 @@ def generate_encoding(parsed_instance):
     # to right format:
     encoding.print_encoding_tofile(parsed_instance.args.intermediate_encoding_out)
     # Using local script for moving:
-    converter_script_path = os.path.join(parsed_instance.args.planner_path, 'utils', 'qcir_to_qdimacs_transformer.py')
+    # utils lives under legacy/ even when planner_path is the repo root
+    _legacy_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    converter_script_path = os.path.join(_legacy_root, 'utils', 'qcir_to_qdimacs_transformer.py')
     os.system("python3 " + converter_script_path + ' --input_file ' + parsed_instance.args.intermediate_encoding_out + ' --output_file ' + parsed_instance.args.encoding_out)
     # when debug we generate both the conversion and checks if they are the same:
     if (parsed_instance.args.debug == 1):
@@ -178,7 +180,8 @@ def generate_encoding(parsed_instance):
     # to right format:
     encoding.print_encoding_tofile(parsed_instance.args.intermediate_encoding_out)
     # Using local script for moving:
-    converter_script_path = os.path.join(parsed_instance.args.planner_path, 'utils', 'qcir_to_qdimacs_transformer.py')
+    _legacy_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    converter_script_path = os.path.join(_legacy_root, 'utils', 'qcir_to_qdimacs_transformer.py')
     os.system("python3 " + converter_script_path + ' --move_intermediate_gates 1 --input_file ' + parsed_instance.args.intermediate_encoding_out + ' --output_file ' + parsed_instance.args.encoding_out)
   elif(parsed_instance.args.encoding_format == 3):
     encoding.print_encoding_tofile(parsed_instance.args.encoding_out)

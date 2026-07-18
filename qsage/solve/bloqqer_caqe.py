@@ -21,7 +21,7 @@ def _qcir_to_qdimacs_legacy(qcir_text: str, out_path: Path) -> None:
 
     qcir_path = out_path.with_suffix(".qcir")
     qcir_path.write_text(qcir_text, encoding="utf-8")
-    script = _REPO / "utils" / "qcir_to_qdimacs_transformer.py"
+    script = _REPO / "legacy" / "utils" / "qcir_to_qdimacs_transformer.py"
     subprocess.run(
         [
             sys.executable,

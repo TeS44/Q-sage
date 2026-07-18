@@ -15,6 +15,21 @@ def _looks_like_positional(path: Path) -> bool:
     return "#positions" in text or "#neighbours" in text
 
 
+def cmd_play(args: argparse.Namespace) -> int:
+    from qsage.play import run_certificate_play, run_hex_interactive
+
+    # Remaining argv after known flags — forward to legacy scripts
+    extra = list(args.legacy_args or [])
+    if args.mode == "hex":
+        if args.problem:
+            extra = ["--problem", args.problem] + extra
+        return run_hex_interactive(extra)
+    if args.mode == "certificate":
+        return run_certificate_play(extra)
+    print("play mode must be hex or certificate", file=sys.stderr)
+    return 2
+
+
 def cmd_solve(args: argparse.Namespace) -> int:
     from qsage.encode import encode_bwnib
     from qsage.solve import solve_qcir_bloqqer_caqe, solve_qcir_qubi
@@ -148,6 +163,26 @@ def main(argv: list[str] | None = None) -> None:
     )
     s.add_argument("--timeout", type=int, default=120)
     s.set_defaults(func=cmd_solve)
+
+    pl = sub.add_parser(
+        "play",
+        help="Interactive play (Hex vs solver, or certificate demo)",
+    )
+    pl.add_argument(
+        "mode",
+        choices=("hex", "certificate"),
+        help="hex = positional Hex vs QBF; certificate = grid certificate play",
+    )
+    pl.add_argument(
+        "--problem",
+        help="for hex mode: path to .pg board (default inside legacy script)",
+    )
+    pl.add_argument(
+        "legacy_args",
+        nargs=argparse.REMAINDER,
+        help="extra args passed to the legacy play script (use -- before flags)",
+    )
+    pl.set_defaults(func=cmd_play)
 
     args = parser.parse_args(argv)
     if not args.command:

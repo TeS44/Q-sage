@@ -19,7 +19,7 @@ All items below are open on GitHub: [TeS44/Q-sage issues](https://github.com/TeS
 - [x] Fast pytest suite over all `*_bwnib.qcir` (no solver) — **103 passed**
 - [x] Small student-facing API (`qsage/encode/bwnib.py`); body still calls legacy for stability
 
-**Status:** Working on `main`. Rewrite pure bwnib later without changing tests.
+**Status:** Working on `main` via `legacy/` encoder. Pure rewrite later without changing tests.
 
 **Parent:** #2
 
@@ -44,9 +44,9 @@ All items below are open on GitHub: [TeS44/Q-sage issues](https://github.com/TeS
 **Why:** Avoid porting unused `-e` variants.
 
 **Done when:**
-- Short table in this file or DESIGN: paper name → legacy `-e` → golden source.
-- Confirmed list for positional paper (likely `pg`, `cp`, `ibign`; maybe `eg`/`ew`).
-- Script or pytest that can regenerate goldens from legacy *once* (when pyvis optional) for non-bwnib encodings.
+- [x] Table in `docs/ENCODINGS.md`
+- [x] Confirmed grid: **bwnib**; positional candidates listed for #7
+- [x] Regenerate notes via `legacy/Q-sage.py`
 
 **Parent:** #2
 
@@ -70,7 +70,8 @@ Hex / HTTT positional encodings needed for arXiv:2301.07345 experiments.
 
 ### #8 Solver backends: Bloqqer + CAQE, Pedant, QuBi
 
-Easy install story; wrap existing `tools/` binaries first if needed; PyQBF optional later.
+**Status:** QuBi (native Mac/Linux) + Bloqqer+CAQE (Docker on Mac). Pedant still TODO.  
+`qsage solve --backend qubi|bloqqer+caqe`. Table 2 sample 15/15 match QuBi.
 
 **Depends on:** #5 · **Parent:** #2
 
@@ -78,8 +79,8 @@ Easy install story; wrap existing `tools/` binaries first if needed; PyQBF optio
 
 ### #9 Winning-strategy certificates (full + partial)
 
-Certificate generation/use for interactive play without re-solving every move  
-(ref: [SAT 2023 certificates](https://doi.org/10.4230/LIPIcs.SAT.2023.24)).
+**Partial:** consume certs via `qsage play certificate` / `legacy/general_interactive_play.py`.  
+Generation API still TODO (Pedant / depqbf cert).
 
 **Depends on:** #8 · **Feeds:** #3
 
@@ -87,47 +88,29 @@ Certificate generation/use for interactive play without re-solving every move
 
 ### #10 Split CLI by game type
 
-Separate simple interfaces: grid/BDDL vs positional Hex (no mega-flag soup).
+**Status:** `qsage parse|encode|solve|play` with simple flags. Refine when positional encodings land.
 
 **Depends on:** #4, #7 · **Parent:** #2
 
 ---
 
-## P3 — bugs / cleanup (after parity; do not block encoding work)
+## P3 — bugs / cleanup
 
-### #11 Legacy soft-fail: `pyvis` import required for any run
+### #11 pyvis optional
 
-`Q-sage.py` imports `utils.circuit_visualizer` → `pyvis` even when `--qcir_viz 0`.  
-Makes golden regeneration and student setup harder.
-
-**Fix later:** lazy import only when visualization is requested.
-
-**Status (2026-07-18):** Partially fixed — `Q-sage.py` lazy-imports pyvis only for `--qcir_viz 1`. Still needs `networkx` via stuttering_bounds.
-
----
+**Status:** Fixed in `legacy/Q-sage.py` (lazy import). `networkx` still required for legacy encode.
 
 ### #12 Dual `.pg` formats
 
-- Real positional boards: `#positions`, `#neighbours`, … (`Benchmarks/B-Hex/`)
-- GDDL-style problems misnamed `.pg` under `GDDL_models/hex/` (`#boardsize`, `#blackgoal`, …)
+**Status:** Done in `qsage parse` + README.
 
-**Status:** parsers handle both; document and auto-detect in CLI (`qsage parse` already peeks at headers).
+### #13 Explicit encode transforms
 
----
+Still inside `legacy/` combine for bwnib parity; re-home on pure rewrite.
 
-### #13 Encoding post-parse transforms as explicit steps
+### #14 Domineering / `#blackturn second`
 
-Legacy folds into parse:
-- implicit index bounds (`compute_index_bounds`)
-- white precondition padding to max length
-
-New parse is clean AST only. Reimplement these as named transforms in `encode/` so students can see them (and so #4 parity holds).
-
----
-
-### #14 Domineering / empty goals and `#blackturn second`
-
-Handled in new parser; verify encoding (#4) treats `False` goals and second-player turn like legacy.
+Lark parser + goldens cover these.
 
 ---
 

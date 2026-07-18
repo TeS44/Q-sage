@@ -2,307 +2,187 @@
 
 QBF encodings for **2-player board games** (Hex, Harary’s Tic-Tac-Toe, Breakthrough, Connect-c, Domineering, Evader–Pursuer, …).
 
-- **Encode** the existence of a bounded-depth winning strategy as QCIR / QDIMACS  
-- **Solve** with QuBi or Bloqqer+CAQE  
-- **Play** interactively (terminal) against a solver or from a certificate  
+| What | Command |
+|------|---------|
+| Parse BDDL / Hex inputs | `qsage parse …` |
+| Encode winning strategy (bwnib) | `qsage encode -e bwnib …` |
+| Solve with QuBi / Bloqqer+CAQE | `qsage solve …` |
+| Interactive play | see [Interactive play](#interactive-play) |
 
-Research papers (encodings / certificates):
+Papers: [arXiv:2303.16949](https://arxiv.org/abs/2303.16949) · [arXiv:2301.07345](https://arxiv.org/abs/2301.07345) · [certificates](https://doi.org/10.4230/LIPIcs.SAT.2023.24)
 
-- [Concise QBF Encodings for Games on a Grid](https://arxiv.org/abs/2303.16949) (SAT 2023)  
-- [Implicit State and Goals in QBF Encodings for Positional Games](https://arxiv.org/abs/2301.07345)  
-- Certificates: [doi:10.4230/LIPIcs.SAT.2023.24](https://doi.org/10.4230/LIPIcs.SAT.2023.24)  
-
-Design / issue backlog: [`docs/DESIGN.md`](docs/DESIGN.md), [`docs/ISSUES.md`](docs/ISSUES.md).
+Docs: [`docs/DESIGN.md`](docs/DESIGN.md) · [`docs/ISSUES.md`](docs/ISSUES.md) · [`docs/ENCODINGS.md`](docs/ENCODINGS.md) · [`legacy/README.md`](legacy/README.md)
 
 ---
 
 ## Requirements
 
-| | Minimum |
-|--|---------|
-| **Python** | 3.11+ |
-| **OS** | macOS, Linux, or Windows (see platform notes below) |
-| **pip** | recent |
+- **Python 3.11+**
+- **macOS, Linux, or Windows** (Windows: WSL2 recommended for solvers)
 
-Optional:
-
-| Tool | Purpose |
-|------|---------|
-| **QuBi** | Fast QCIR solver (works well on **macOS** and **Linux**) |
-| **Bloqqer + CAQE** | Paper’s main CNF pipeline (**Linux** binaries; on Mac use **Docker**) |
-| **Docker** | Run Linux solvers on macOS / Windows |
-| **networkx** | Used by the legacy encoder path (installed with the package) |
-| **pyvis** | Only if you visualize QCIR circuits (`--qcir_viz 1`) |
-| **python-sat** | Needed by `general_interactive_play.py` (certificate play) |
+| Optional | Why |
+|----------|-----|
+| **QuBi** | Fast QCIR solver (native Mac/Linux) |
+| **Bloqqer + CAQE** | Paper CNF pipeline (Linux binaries; Docker on Mac/Windows) |
+| **Docker Desktop** | Run Linux solvers on Mac/Windows |
+| **python-sat** | Certificate interactive play |
+| **pyvis** | Optional circuit visualization (legacy only) |
 
 ---
 
 ## Install
-
-### 1. Get the code
 
 ```bash
 git clone https://github.com/TeS44/Q-sage.git
 cd Q-sage
 ```
 
-### 2. Create a virtual environment (recommended)
-
-**macOS / Linux:**
+**macOS / Linux**
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
+pip install -e ".[dev]"
+# interactive certificate play:
+pip install -e ".[play]"
 ```
 
-**Windows (PowerShell):**
+**Windows (PowerShell)**
 
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-**Windows (cmd):**
-
-```bat
-py -3.11 -m venv .venv
-.venv\Scripts\activate.bat
-```
-
-### 3. Install the package
-
-```bash
 pip install -e ".[dev]"
+pip install -e ".[play]"
 ```
 
-This installs the `qsage` CLI and dependencies (`lark`, `networkx`, `pytest`, …).
+### Solvers
 
-### 4. Solvers (optional but recommended)
-
-#### QuBi (preferred on Mac / Linux)
-
-QuBi reads **QCIR** directly and is usually the easiest option on a laptop.
-
-**macOS:**
+**QuBi (recommended on Mac / Linux)**
 
 ```bash
-bash scripts/build_qubi_macos.sh
-# installs solvers/qubi/qubi
+bash scripts/build_qubi_macos.sh    # also works on many Linux setups
+# → solvers/qubi/qubi
+solvers/qubi/qubi -h
 ```
 
-Needs: Xcode CLT / `clang++`, CMake, GMP (e.g. `brew install gmp cmake` if missing).  
-The script builds [Sylvan](https://github.com/trolando/sylvan) into `~/.local` and patches QuBi for current Lace APIs.
+Needs a C++ compiler, CMake, and GMP (`brew install gmp cmake` on Mac if needed).
 
-**Linux:**
+**Bloqqer + CAQE**
 
-```bash
-# Same idea as the macOS script, or build QuBi + Sylvan from source:
-#   https://github.com/jacopol/qubi
-# Place the binary at: solvers/qubi/qubi
-bash scripts/build_qubi_macos.sh   # works on Linux too if g++/cmake/gmp are available
-```
-
-**Windows:**
-
-- **WSL2 (recommended):** clone the repo inside WSL and follow the **Linux** steps.  
-- Or use **Docker** for solvers (see below). Native MSVC builds of QuBi/Sylvan are not documented yet.
-
-Check:
-
-```bash
-solvers/qubi/qubi -h          # macOS / Linux
-# Windows WSL: same path
-```
-
-#### Bloqqer + CAQE
-
-Binaries under `tools/Bloqqer/bloqqer` and `solvers/caqe/caqe` are **Linux x86_64 ELF**.
-
-| Platform | How to run |
-|----------|------------|
-| **Linux x86_64** | Run natively |
-| **macOS / Windows** | Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), start it, then use `--backend bloqqer+caqe` (qsage launches `linux/amd64` containers) |
+- **Linux x86_64:** binaries in `tools/Bloqqer/` and `solvers/caqe/`
+- **macOS / Windows:** install [Docker Desktop](https://www.docker.com/products/docker-desktop/), start it; `qsage solve --backend bloqqer+caqe` runs them in a `linux/amd64` container
 
 ---
 
-## Quick start (`qsage` CLI)
+## Quick start
 
 ```bash
 qsage -h
-qsage parse -h
-qsage encode -h
-qsage solve -h
 ```
 
-### Parse inputs
-
-**BDDL / GDDL domain + problem (grid games):**
+### Parse
 
 ```bash
+# Grid game (BDDL domain + problem)
 qsage parse \
   --domain Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig \
   --problem Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_3_domino.ig
-```
 
-**Positional Hex (`.pg` board + neighbours):**
-
-```bash
+# Hex board
 qsage parse --problem Benchmarks/B-Hex/hein_04_3x3-05.pg
 ```
 
-### Encode (bwnib — paper grid encoding)
+### Encode (grid paper encoding: bwnib)
 
 ```bash
 qsage encode \
   --domain Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig \
   --problem Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_3_domino.ig \
-  -e bwnib \
-  --normalize \
-  --out out.qcir
+  -e bwnib --normalize --out out.qcir
 ```
-
-- `--format qcir` (default) or `qdimacs`  
-- `--normalize` strips comments for golden comparison  
 
 ### Solve
 
-**With QuBi (QCIR file):**
-
 ```bash
+# QuBi on a golden QCIR
 qsage solve \
   --qcir Benchmarks/SAT2023_GDDL/QBF_instances/httt/3x3_3_domino_bwnib.qcir \
   --backend qubi
-```
 
-**Encode then solve:**
-
-```bash
+# Encode then solve
 qsage solve \
   --domain Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig \
   --problem Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_3_domino.ig \
   --backend qubi
+
+# Bloqqer + CAQE (Docker on Mac if needed)
+qsage solve --qcir path/to/file.qcir --backend bloqqer+caqe --timeout 120
 ```
 
-**Bloqqer + CAQE** (Docker on Mac/Windows if needed):
+`SAT` = first player has a winning strategy of that depth; `UNSAT` = none.
 
-```bash
-qsage solve \
-  --qcir Benchmarks/SAT2023_GDDL/QBF_instances/httt/3x3_3_domino_bwnib.qcir \
-  --backend bloqqer+caqe \
-  --timeout 120
-```
-
-Output is `SAT` (first player has a winning strategy of that depth) or `UNSAT` (no such strategy).
-
-### Paper Table 2 sample checks
+### Paper Table 2 checks
 
 ```bash
 python scripts/run_paper_checks.py --backend qubi
 ```
 
-Compares a set of SAT 2023 Table 2 instances (bold = win / SAT, plain = no win / UNSAT).
-
 ---
 
 ## Interactive play
 
-There are **two** terminal players today. A browser UI is planned ([issue #3](https://github.com/TeS44/Q-sage/issues/3)).
-
-### 1. Hex (positional) — play vs QBF solver
-
-Uses the **legacy** pipeline: re-encodes after each move and calls a solver.
+### Hex vs QBF solver (terminal)
 
 ```bash
-# from repo root, with venv active
-python interactive_play.py --problem Benchmarks/B-Hex/hein_04_3x3-05.pg
+qsage play hex --problem Benchmarks/B-Hex/hein_04_3x3-05.pg
+# equivalent:
+#   PYTHONPATH=legacy python legacy/interactive_play.py --problem …
 ```
-
-Useful options:
 
 | Flag | Meaning |
 |------|---------|
 | `--problem` | Hex `.pg` file |
-| `--player user` | You type moves (default) |
-| `--player random` | Random legal moves |
-| `--depth` | Override search depth if needed |
-| `-e` | Encoding for the backend (see `python interactive_play.py -h`) |
+| `--player user` | You play White (default) |
+| `--player random` | Random White |
+| `-e` | Encoding for the backend (see `-h`) |
 
-**Platform notes:**
-
-- Needs a working **QBF solve path** via the legacy `Q-sage.py` stack (CAQE under `solvers/`, etc.). On **macOS/Windows**, prefer **WSL2** or ensure Docker-based solving is available if you only have Linux ELF solvers.  
-- Enter moves as indicated by the prompt (board positions such as `a1`).
-
-Sample (old terminal UI):
+Needs a working solver via the legacy stack (CAQE under `solvers/`). On Mac/Windows prefer **WSL2** or ensure Linux solvers can run (Docker).
 
 ![sample_play](https://user-images.githubusercontent.com/37924323/215714804-6fff96c3-21b7-44c1-951f-15587202581f.png)
 
-### 2. Grid games — play from a **certificate**
+### Grid games from a certificate (terminal)
 
-Validates / plays against a precomputed winning strategy (CNF certificate + meta file). Does **not** re-run a QBF solver each move.
-
-```bash
-pip install python-sat
-
-python general_interactive_play.py \
-  --certificate_path testcases/index_general_certificates/httt_4_4_tic/certificate.cnf \
-  --meta_path testcases/index_general_certificates/httt_4_4_tic/viz_meta_out \
-  --player user
-```
-
-| Flag | Meaning |
-|------|---------|
-| `--certificate_path` | Certificate (CNF / AIGER as supported) |
-| `--meta_path` | Board / variable meta from encoding |
-| `--player user` | Interactive white moves (default) |
-| `--player random` | Random white replies |
-| `--seed` | RNG seed for random player |
-
-**Demo defaults** already point at a 4×4 HTTT Tic certificate under `testcases/index_general_certificates/`.
+No QBF solve each turn — uses a precomputed certificate + meta file. Works on **Mac, Linux, Windows** with `python-sat`.
 
 ```bash
-python general_interactive_play.py
-# then type white moves when prompted, e.g. occupy(2,3) style as printed
+pip install -e ".[play]"   # or: pip install python-sat
+
+qsage play certificate
+# defaults to the 4×4 HTTT Tic certificate under testcases/
+# extra flags after -- :
+qsage play certificate -- --certificate_path path/to/certificate.cnf --player user
 ```
 
-Works the same on **macOS, Linux, and Windows** as long as `python-sat` installs (use 64-bit Python).
+### Browser UI
 
-### 3. Future web UI
-
-Local browser play (grid + Hex boards, opponents: human / random / QBF / certificate) is tracked in [issue #3](https://github.com/TeS44/Q-sage/issues/3). Until then, use the scripts above.
+Planned local web UI: [issue #3](https://github.com/TeS44/Q-sage/issues/3).
 
 ---
 
-## Legacy encoder (`Q-sage.py`)
+## Layout
 
-Still available for full encoding flags and paper reproduction.
-
-**Grid / BDDL (bwnib):**
-
-```bash
-python Q-sage.py \
-  --game_type general -e bwnib \
-  --ib_domain Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough/domain.ig \
-  --ib_problem Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough/2x4_13.ig \
-  --encoding_format 1 \
-  --encoding_out intermediate_files/encoding.qcir \
-  --run 0
+```text
+qsage/          # supported package (parse, encode, solve, CLI)
+scripts/        # build QuBi, paper checks
+tests/          # pytest
+docs/           # design, issues, encoding keep-list
+Benchmarks/     # games + golden QCIR
+solvers/        # CAQE, QuBi, …
+tools/          # Bloqqer, converters
+testcases/      # certificates / extra inputs
+legacy/         # original code (reference only — see legacy/README.md)
 ```
-
-**Hex positional:**
-
-```bash
-python Q-sage.py -e pg \
-  --problem Benchmarks/B-Hex/hein_04_3x3-05.pg \
-  --run 0 \
-  --encoding_out intermediate_files/hex.qcir
-```
-
-```bash
-python Q-sage.py -h   # all flags
-```
-
-- `--run 0` encode only · `1` existence · `2` extract first move  
-- Circuit visualization needs `pip install pyvis` and `--qcir_viz 1`  
 
 ---
 
@@ -312,53 +192,39 @@ python Q-sage.py -h   # all flags
 pytest tests/ -q
 ```
 
-Includes:
-
-- Parse all BDDL / positional benchmarks  
-- **bwnib** QCIR vs goldens under `Benchmarks/SAT2023_GDDL/QBF_instances/**/*_bwnib.qcir`  
-- QuBi paper checks (skipped if `solvers/qubi/qubi` is missing)  
-
 ---
 
 ## Platform cheat sheet
 
-| Task | macOS | Linux | Windows |
-|------|-------|-------|---------|
-| `pip install -e ".[dev]"` | ✓ | ✓ | ✓ (use `py -3.11`) |
-| `qsage parse / encode` | ✓ | ✓ | ✓ |
-| QuBi solve | ✓ build script | ✓ build / binary | WSL2 or Docker |
-| Bloqqer+CAQE | Docker Desktop | native ELF | Docker Desktop or WSL2 |
-| `interactive_play.py` (Hex) | ✓ if solvers work | ✓ | WSL2 recommended |
-| `general_interactive_play.py` | ✓ + `python-sat` | ✓ | ✓ + `python-sat` |
-
-**Windows tip:** For solvers and Hex interactive play, [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) with Ubuntu is the least painful path: install Python + deps inside WSL and use the Linux instructions.
-
-**macOS tip:** QuBi first (`build_qubi_macos.sh`). Start Docker only if you need Bloqqer+CAQE.
+| | macOS | Linux | Windows |
+|--|-------|-------|---------|
+| Install `qsage` | ✓ | ✓ | ✓ (`py -3.11`) |
+| parse / encode | ✓ | ✓ | ✓ |
+| QuBi | build script | build / binary | **WSL2** |
+| Bloqqer+CAQE | Docker | native | Docker or WSL2 |
+| Hex interactive | solvers via WSL/Docker if needed | ✓ | WSL2 |
+| Certificate play | ✓ + python-sat | ✓ | ✓ + python-sat |
 
 ---
 
-## Repository layout (short)
+## Legacy code
 
-```text
-qsage/           # new package: parse, encode, solve, CLI
-scripts/         # build QuBi, paper checks
-Benchmarks/      # games + golden QCIR/QDIMACS
-solvers/         # CAQE, QuBi, … (some Linux-only)
-tools/           # Bloqqer, converters
-Q-sage.py        # legacy encoder CLI
-interactive_play.py
-general_interactive_play.py
-docs/            # DESIGN.md, ISSUES.md
-tests/
+Everything that used to live at the repo root (`Q-sage.py`, old `parse/`, `q_encodings/`, interactive scripts, …) is under **`legacy/`**.
+
+```bash
+# Example: old encoder CLI
+export PYTHONPATH="$PWD/legacy"
+python legacy/Q-sage.py -h
 ```
+
+See [`legacy/README.md`](legacy/README.md). Prefer `qsage` for new work.
 
 ---
 
 ## Authors
 
 ```text
-Irfansha Shaik
-Aarhus
+Irfansha Shaik — Aarhus
 ```
 
-Contributors: see GitHub. License: MIT (see `LICENSE`).
+License: MIT (`LICENSE`).

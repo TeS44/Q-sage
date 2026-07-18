@@ -181,7 +181,25 @@ if __name__ == '__main__':
       os.mkdir("./intermediate_files")
     # Writing to temporary intermediate file:
     print_to_file(temp_input_file, parsed_dict, args)
-    command = "python3 Q-sage.py --run 2 --ignore_file_depth 1 --depth " + str(depth) + ' --restricted_position_constraints ' + str(args.restricted_position_constraints) + ' --renumber_positions ' + str(args.renumber_positions)  + ' --forall_move_restrictions ' + args.forall_move_restrictions + ' -e ' + args.e + " --problem " + temp_input_file + " > intermediate_files/interactive_output"
+    # Prefer repo-root cwd so Benchmarks/solvers resolve; legacy encoder path:
+    _qsage = os.path.join(os.path.dirname(__file__), "Q-sage.py")
+    command = (
+        "python3 "
+        + _qsage
+        + " --run 2 --ignore_file_depth 1 --depth "
+        + str(depth)
+        + " --restricted_position_constraints "
+        + str(args.restricted_position_constraints)
+        + " --renumber_positions "
+        + str(args.renumber_positions)
+        + " --forall_move_restrictions "
+        + args.forall_move_restrictions
+        + " -e "
+        + args.e
+        + " --problem "
+        + temp_input_file
+        + " > intermediate_files/interactive_output"
+    )
     subprocess.run([command], shell = True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT ,check=True)
     winning_move = read_winning_move("intermediate_files/interactive_output")
     if (winning_move == -1):

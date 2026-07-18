@@ -29,7 +29,12 @@ if __name__ == '__main__':
   parser.add_argument("--ib_domain", help=" index based domain file path", default = 'testcases/index_separate_inputs/domain.ig')
   parser.add_argument("--ib_problem", help=" index based problem file path", default = 'testcases/index_separate_inputs/problem.ig')
   parser.add_argument("--problem", help="problem file path", default = 'testcases/winning_testcases_ungrounded_new_boards/hein_04_3x3-05.pg')
-  parser.add_argument("--planner_path", help="path for Q-sage.py, allowing remote run", default = os.getcwd())
+  # Repo root (parent of legacy/) so solvers/ and tools/ resolve after the move.
+  parser.add_argument(
+      "--planner_path",
+      help="repo root (solvers/, tools/); default: parent of legacy/",
+      default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+  )
   parser.add_argument("--depth", help="Depth, default 3", type=int,default = 3)
   parser.add_argument("--xmax", help="xmax, default 4", type=int,default = 4)
   parser.add_argument("--ymax", help="ymax, default 4", type=int,default = 4)

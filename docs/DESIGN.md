@@ -1,6 +1,6 @@
 # Q-sage rewrite (student guide)
 
-Target: **TeS44/Q-sage**. Legacy `Q-sage.py` stays as the reference until encodings are ported.
+Target: **TeS44/Q-sage**. Original sources live under **`legacy/`** (reference / bwnib backend).
 
 ## Issues
 
