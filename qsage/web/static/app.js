@@ -501,21 +501,38 @@ function renderSquareBoard(cells) {
     td.colSpan = 4;
     td.style.border = "none";
     td.style.color = "var(--muted)";
-    td.textContent =
-      state.kind === "grid"
-        ? "Grid instance — use “QBF: win from start?”"
-        : "No board";
+    td.textContent = "No board cells";
     tr.appendChild(td);
     table.appendChild(tr);
     return;
   }
-  const cols = [...new Set(positions.map((p) => p[0]))].sort();
-  const rows = [
-    ...new Set(positions.map((p) => parseInt(p.slice(1), 10))),
-  ].sort((a, b) => a - b);
+  // Prefer explicit board size from grid session
+  let cols, rows;
+  if (state.board_w && state.board_h) {
+    cols = [];
+    for (let i = 0; i < state.board_w; i++) cols.push(String.fromCharCode(97 + i));
+    rows = [];
+    for (let j = 1; j <= state.board_h; j++) rows.push(j);
+  } else {
+    cols = [...new Set(positions.map((p) => p[0]))].sort();
+    rows = [
+      ...new Set(positions.map((p) => parseInt(p.slice(1), 10))),
+    ].sort((a, b) => a - b);
+  }
+  // Display row 1 at bottom (like chess) for grids: reverse row order visually
+  const rowOrder = [...rows].reverse();
 
-  for (const r of rows) {
+  for (const r of rowOrder) {
     const tr = document.createElement("tr");
+    // row label
+    const lab = document.createElement("td");
+    lab.textContent = String(r);
+    lab.style.border = "none";
+    lab.style.background = "transparent";
+    lab.style.color = "var(--muted)";
+    lab.style.width = "1.2rem";
+    lab.style.fontSize = "0.75rem";
+    tr.appendChild(lab);
     for (const c of cols) {
       const pos = c + r;
       const td = document.createElement("td");
@@ -528,10 +545,23 @@ function renderSquareBoard(cells) {
       const v = cells[pos];
       td.className =
         v === "B" || v === "black" ? "B" : v === "W" || v === "white" ? "W" : "open";
-      td.textContent = v === "open" || v === "-" ? "" : String(v)[0].toUpperCase();
+      td.textContent =
+        v === "open" || v === "-"
+          ? ""
+          : v === "B" || v === "black"
+            ? "B"
+            : v === "W" || v === "white"
+              ? "W"
+              : String(v)[0].toUpperCase();
       td.title = pos;
-      if ((v === "open" || v === "-") && !state.finished && !busy) {
+      const canClick =
+        (v === "open" || v === "-") &&
+        !state.finished &&
+        !busy &&
+        state.your_turn !== false;
+      if (canClick) {
         td.onclick = () => onCell(pos);
+        td.style.cursor = "pointer";
       } else if (busy && (v === "open" || v === "-")) {
         td.style.cursor = "wait";
       }
@@ -539,6 +569,19 @@ function renderSquareBoard(cells) {
     }
     table.appendChild(tr);
   }
+  // column letters footer
+  const foot = document.createElement("tr");
+  foot.appendChild(document.createElement("td")).style.border = "none";
+  for (const c of cols) {
+    const td = document.createElement("td");
+    td.textContent = c;
+    td.style.border = "none";
+    td.style.background = "transparent";
+    td.style.color = "var(--muted)";
+    td.style.fontSize = "0.75rem";
+    foot.appendChild(td);
+  }
+  table.appendChild(foot);
 }
 
 function updateColorBanner() {
@@ -611,8 +654,10 @@ function render() {
   const cells = state.cells || {};
   if (state.kind === "hex" && Object.keys(cells).length) {
     renderHexSvg(cells);
-  } else {
+  } else if (Object.keys(cells).length) {
     renderSquareBoard(cells);
+  } else {
+    renderSquareBoard({});
   }
 }
 
@@ -694,26 +739,21 @@ async function loadGame() {
 
 async function onCell(pos) {
   if (!state || busy) return;
-  // Only when it is the human's turn (White vs AI)
-  if (state.kind !== "grid" && state.your_turn === false) {
+  if (state.your_turn === false) {
     log(
       state.turn_hint ||
         `Not your turn — you are ${state.you_are || "White"}; wait for Black`
     );
     return;
   }
-  if (
-    state.kind === "hex" &&
-    state.human_color === "W" &&
-    state.to_move === "B"
-  ) {
-    log("Black to move (opponent). Wait for the solver / AI.");
+  if (state.to_move === "B") {
+    log("Black to move (opponent). Wait for AI.");
     return;
   }
   const opp =
     state.kind === "certificate"
       ? null
-      : playMode === "hybrid"
+      : playMode === "hybrid" && state.kind === "hex"
         ? "hybrid"
         : playMode === "qbf"
           ? "qbf"
@@ -721,13 +761,7 @@ async function onCell(pos) {
             ? "random"
             : "none";
 
-  const waitingForSolver = opp === "qbf" || opp === "hybrid";
-  setBusy(
-    true,
-    waitingForSolver
-      ? "QuBi running — Black’s reply"
-      : "Processing move"
-  );
+  setBusy(true, "Processing move — Black may reply…");
   try {
     if (state.kind === "certificate") {
       state = await api("/api/move", {
@@ -743,34 +777,26 @@ async function onCell(pos) {
         body: JSON.stringify({
           session: state.session,
           position: pos,
-          opponent: opp,
+          opponent: opp || "qbf",
           timeout: 3,
         }),
       });
-      // Explicit colours from server (you must be White)
       if (state.you_just_played) {
         const y = state.you_just_played;
-        log(`You played ${y.label} at ${y.position}`);
-        if (y.color !== "W") {
-          log("WARNING: expected White stone for your move — report this bug");
-        }
+        log(`You played White at ${y.position}`);
       } else {
         log(`You → ${pos} (White)`);
       }
       if (state.opponent_just_played) {
         const o = state.opponent_just_played;
         log(
-          `QBF played ${o.label} at ${o.position}` +
-            (o.mode ? ` (${o.mode})` : "")
+          `Black (AI) at ${o.position}` + (o.mode ? ` (${o.mode})` : "")
         );
       } else if (state.last_ai && state.last_ai.color === "B") {
-        log(
-          `QBF played Black at ${state.last_ai.position} (${state.last_ai.mode})`
-        );
+        log(`Black (AI) at ${state.last_ai.position} (${state.last_ai.mode})`);
       }
-      if (state.your_turn) {
-        log("→ Your turn again (White)");
-      }
+      if (state.your_turn) log("→ Your turn (White)");
+      if (state.finished) log(`Game over: ${state.winner || "done"}`);
     }
   } catch (e) {
     log("Error: " + e.message);

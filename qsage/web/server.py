@@ -13,7 +13,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from qsage.web import cert_session, hex_session
+from qsage.web import cert_session, grid_session, hex_session
 from qsage.web.catalog import list_all_problems
 from qsage.web.partial_certs import has_partial, list_partial_certs, load_partial
 
@@ -148,30 +148,28 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 if kind == "grid":
                     domain = (qs.get("domain_file") or qs.get("domain") or [None])[0]
-                    # catalog uses "domain" key for domain.ig path
-                    sid = uuid.uuid4().hex
-                    # find domain from catalog if missing
                     if not domain:
                         for p in list_all_problems():
                             if p["path"] == path:
                                 domain = p.get("domain")
                                 break
-                    sess = {
-                        "session": sid,
-                        "kind": "grid",
-                        "path": path,
-                        "domain": domain,
-                        "play_mode": "qbf",
-                        "cells": {},
-                        "to_move": "—",
-                        "finished": False,
-                        "winner": None,
-                        "depth_bound": 0,
-                        "moves_played": 0,
-                        "message": "Grid — use QBF to check if Black wins (bwnib).",
-                    }
-                    _SESSIONS[sid] = sess
-                    self._json(200, sess)
+                    sess = grid_session.new_grid_session(path, domain)
+                    sess["play_mode"] = (
+                        mode if mode in ("qbf", "random", "none") else "qbf"
+                    )
+                    sess["human_color"] = "W"
+                    sess["ai_color"] = "B"
+                    _SESSIONS[sess["session"]] = sess
+                    # Black opens when first to move
+                    if (
+                        sess["play_mode"] in ("qbf", "random")
+                        and sess["to_move"] == "B"
+                    ):
+                        try:
+                            grid_session.maybe_play_ai_grid(sess, timeout=2.0)
+                        except Exception:
+                            pass
+                    self._json(200, grid_session.public_grid(sess))
                     return
 
                 # hex — vs engine: you are White, opponent Black
@@ -238,8 +236,52 @@ class Handler(BaseHTTPRequestHandler):
                     pub["play_mode"] = "certificate"
                     self._json(200, pub)
                     return
+                if sess.get("kind") == "grid":
+                    pos = str(body.get("position") or "").strip()
+                    mode = body.get("opponent") or sess.get("play_mode") or "qbf"
+                    if mode in ("qbf", "random", "none"):
+                        sess["play_mode"] = mode
+                    t_ai = float(body.get("timeout") or 2.0)
+                    if (
+                        sess["play_mode"] in ("qbf", "random")
+                        and sess["to_move"] != "W"
+                        and not sess["finished"]
+                    ):
+                        self._json(
+                            400,
+                            {
+                                "error": "Not your turn (you are White).",
+                                "state": grid_session.public_grid(sess),
+                            },
+                        )
+                        return
+                    painted = grid_session.apply_grid_move(
+                        sess, pos, color="W", as_human=True
+                    )
+                    if (
+                        not sess["finished"]
+                        and sess["to_move"] == "B"
+                        and sess["play_mode"] in ("qbf", "random")
+                    ):
+                        grid_session.maybe_play_ai_grid(sess, timeout=t_ai)
+                    pub = grid_session.public_grid(sess)
+                    pub["you_just_played"] = {
+                        "position": pos,
+                        "color": "W",
+                        "label": "White",
+                        "cells": painted,
+                    }
+                    if sess.get("last_ai") and sess["last_ai"].get("color") == "B":
+                        pub["opponent_just_played"] = {
+                            "position": sess["last_ai"]["position"],
+                            "color": "B",
+                            "label": "Black",
+                            "mode": sess["last_ai"].get("mode"),
+                        }
+                    self._json(200, pub)
+                    return
                 if sess.get("kind") != "hex":
-                    self._json(400, {"error": "board moves only for hex/certificate"})
+                    self._json(400, {"error": "board moves only for hex/grid/certificate"})
                     return
                 pos = str(body.get("position") or "").strip()
                 mode = body.get("opponent") or sess.get("play_mode") or "qbf"
@@ -316,10 +358,19 @@ class Handler(BaseHTTPRequestHandler):
                     pub["play_mode"] = "certificate"
                     self._json(200, pub)
                     return
+                if sess.get("kind") == "grid":
+                    if sess["to_move"] != "B" and not sess.get("finished"):
+                        self._json(
+                            400,
+                            {"error": "AI is Black; not their turn"},
+                        )
+                        return
+                    grid_session.maybe_play_ai_grid(sess, timeout=t_ai)
+                    self._json(200, grid_session.public_grid(sess))
+                    return
                 if sess.get("kind") == "hex":
                     ai = sess.get("ai_color") or "B"
                     if sess["to_move"] != ai and mode != "none":
-                        # still allow explicit AI button only on AI's turn
                         self._json(
                             400,
                             {
@@ -343,15 +394,22 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if u.path == "/api/undo":
-                if not sess or sess.get("kind") != "hex":
-                    self._json(400, {"error": "undo only for hex"})
+                if not sess:
+                    self._json(400, {"error": "unknown session"})
                     return
-                hex_session.undo(sess)
-                if body.get("undo_ai") and sess["history"]:
+                if sess.get("kind") == "hex":
                     hex_session.undo(sess)
-                pub = hex_session.public_hex(sess)
-                pub["play_mode"] = sess.get("play_mode")
-                self._json(200, pub)
+                    if body.get("undo_ai") and sess["history"]:
+                        hex_session.undo(sess)
+                    self._json(200, hex_session.public_hex(sess))
+                    return
+                if sess.get("kind") == "grid":
+                    grid_session.undo_grid(sess)
+                    if body.get("undo_ai") and sess["history"]:
+                        grid_session.undo_grid(sess)
+                    self._json(200, grid_session.public_grid(sess))
+                    return
+                self._json(400, {"error": "undo only for hex/grid"})
                 return
 
             if u.path == "/api/solve":
@@ -360,7 +418,6 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 mid = bool(body.get("midgame"))
                 enc = body.get("encoding") or "pg"
-                # Hard cap for interactive UI (QuBi has no internal timer)
                 timeout = float(body.get("timeout") or 3.0)
                 timeout = max(0.5, min(timeout, 30.0))
                 if sess.get("kind") == "hex":
@@ -372,37 +429,7 @@ class Handler(BaseHTTPRequestHandler):
                     )
                     return
                 if sess.get("kind") == "grid":
-                    from qsage.encode.bwnib import encode_bwnib
-                    from qsage.solve.qubi import qubi_available, solve_qcir_qubi
-
-                    if not qubi_available():
-                        self._json(
-                            200,
-                            {"status": "ERROR", "detail": "QuBi missing"},
-                        )
-                        return
-                    domain = _REPO / (sess.get("domain") or "")
-                    problem = _REPO / sess["path"]
-                    qcir = encode_bwnib(domain, problem)
-                    res = solve_qcir_qubi(qcir, timeout=timeout)
-                    self._json(
-                        200,
-                        {
-                            "status": res.status.value,
-                            "seconds": res.seconds,
-                            "detail": "bwnib on grid instance",
-                            "timeout": timeout,
-                            "meaning": (
-                                "Black winning strategy (SAT)"
-                                if res.status.value == "SAT"
-                                else "No Black win in bound (UNSAT)"
-                                if res.status.value == "UNSAT"
-                                else f"No answer within {timeout}s"
-                                if res.status.value == "TIMEOUT"
-                                else res.message
-                            ),
-                        },
-                    )
+                    self._json(200, grid_session.solve_grid_qbf(sess, timeout=timeout))
                     return
                 self._json(400, {"error": "solve not supported"})
                 return
