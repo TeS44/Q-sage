@@ -149,28 +149,247 @@ async function selectDomain(id) {
   if (btn) btn.click();
 }
 
-function render() {
-  if (!state) return;
-  $("stMode").textContent = state.play_mode || playMode;
-  $("status").textContent = busy
-    ? "Waiting for solver…"
-    : state.finished
-      ? state.winner
-        ? `Over — ${state.winner}`
-        : "Game over"
-      : "Playing";
-  $("tomove").textContent = busy
-    ? "—"
-    : state.finished
-      ? "—"
-      : state.to_move;
-  $("depth").textContent = state.depth_bound ?? "—";
-  $("moves").textContent = state.moves_played ?? "—";
-  $("msg").textContent = state.message || "";
+/** Parse "a1" → {col:0, row:0} */
+function parsePos(label) {
+  const m = /^([a-zA-Z]+)(\d+)$/.exec(label);
+  if (!m) return null;
+  let col = 0;
+  const letters = m[1].toLowerCase();
+  for (let i = 0; i < letters.length; i++) {
+    col = col * 26 + (letters.charCodeAt(i) - 96);
+  }
+  col -= 1;
+  const row = parseInt(m[2], 10) - 1;
+  return { col, row };
+}
 
+/** Flat-top hex corners around (cx,cy), radius size. */
+function hexPoints(cx, cy, size) {
+  const pts = [];
+  for (let i = 0; i < 6; i++) {
+    const a = (Math.PI / 180) * (60 * i);
+    pts.push([cx + size * Math.cos(a), cy + size * Math.sin(a)]);
+  }
+  return pts.map((p) => p.join(",")).join(" ");
+}
+
+/**
+ * Little-Golem-style Hex: flat-top hexes in a rhombus.
+ * col = letter (a…), row = number (1…).
+ * Black borders ≈ top/bottom of rhombus edges (start/endboarder in files).
+ */
+function renderHexSvg(cells) {
   const table = $("board");
+  const svg = $("hexSvg");
+  const legend = $("hexLegend");
+  if (table) table.style.display = "none";
+  if (svg) svg.style.display = "block";
+  if (legend) legend.style.display = "block";
+
+  const positions = Object.keys(cells);
+  const coords = {};
+  let maxC = 0,
+    maxR = 0;
+  for (const p of positions) {
+    const pr = parsePos(p);
+    if (!pr) continue;
+    coords[p] = pr;
+    maxC = Math.max(maxC, pr.col);
+    maxR = Math.max(maxR, pr.row);
+  }
+  const n = Math.max(maxC, maxR) + 1;
+  // size scales with board
+  const size = n <= 3 ? 32 : n <= 5 ? 26 : n <= 7 ? 22 : 18;
+  const w = size * 2;
+  const h = Math.sqrt(3) * size;
+
+  // Pixel center for (col,row) — classic Hex rhombus (flat-top)
+  function center(col, row) {
+    const x = size * (1.5 * col) + size * 1.2;
+    const y = h * (row + col * 0.5) + size * 1.2;
+    return [x, y];
+  }
+
+  let maxX = 0,
+    maxY = 0;
+  const centers = {};
+  for (const p of positions) {
+    const { col, row } = coords[p];
+    const [x, y] = center(col, row);
+    centers[p] = [x, y];
+    maxX = Math.max(maxX, x + size * 1.3);
+    maxY = Math.max(maxY, y + size * 1.3);
+  }
+
+  // Edge markers: Black connects start↔end (usually opposite sides of rhombus)
+  // Draw thick border strips along min-row / max-row edges of the rhombus
+  // for visual Little Golem cues (dark = Black NW/SE, light = White NE/SW)
+  const start = new Set(state.start_border || []);
+  const end = new Set(state.end_border || []);
+
+  const NS = "http://www.w3.org/2000/svg";
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  svg.setAttribute("viewBox", `0 0 ${maxX + size} ${maxY + size}`);
+  svg.setAttribute("width", String(Math.min(560, maxX + size)));
+  svg.setAttribute("height", String(Math.min(480, maxY + size)));
+
+  // Background diamond (board felt)
+  const bg = document.createElementNS(NS, "polygon");
+  const corners = [
+    center(0, 0),
+    center(maxC, 0),
+    center(maxC, maxR),
+    center(0, maxR),
+  ];
+  // expand slightly
+  bg.setAttribute(
+    "points",
+    corners
+      .map(([x, y], i) => {
+        const pad = size * 0.85;
+        // rough outward nudge
+        return `${x},${y}`;
+      })
+      .join(" ")
+  );
+  bg.setAttribute("fill", "#8b7355");
+  bg.setAttribute("opacity", "0.35");
+  svg.appendChild(bg);
+
+  // Edge highlight lines for start/end borders (Black's goal sides)
+  function edgePolyline(labels, cls) {
+    const pts = labels
+      .map((lab) => centers[lab])
+      .filter(Boolean)
+      .map(([x, y]) => `${x},${y}`);
+    if (pts.length < 2) return;
+    const pl = document.createElementNS(NS, "polyline");
+    pl.setAttribute("points", pts.join(" "));
+    pl.setAttribute("class", cls);
+    svg.appendChild(pl);
+  }
+  // Order start/end by col for a clean edge
+  const sortByCol = (labs) =>
+    labs
+      .filter((p) => centers[p])
+      .sort((a, b) => coords[a].col - coords[b].col || coords[a].row - coords[b].row);
+  edgePolyline(sortByCol([...start]), "edge-black");
+  edgePolyline(sortByCol([...end]), "edge-black");
+
+  // White borders ≈ left (col=0) and right (col=maxC) sides of rhombus
+  const leftEdge = positions
+    .filter((p) => coords[p] && coords[p].col === 0)
+    .sort((a, b) => coords[a].row - coords[b].row);
+  const rightEdge = positions
+    .filter((p) => coords[p] && coords[p].col === maxC)
+    .sort((a, b) => coords[a].row - coords[b].row);
+  edgePolyline(leftEdge, "edge-white");
+  edgePolyline(rightEdge, "edge-white");
+
+  // Cells
+  for (const p of positions) {
+    const [cx, cy] = centers[p];
+    const v = cells[p];
+    const poly = document.createElementNS(NS, "polygon");
+    poly.setAttribute("points", hexPoints(cx, cy, size * 0.95));
+    let cls = "hex-cell open";
+    if (v === "B" || v === "black") cls = "hex-cell B";
+    else if (v === "W" || v === "white") cls = "hex-cell W";
+    poly.setAttribute("class", cls);
+    poly.dataset.pos = p;
+    poly.setAttribute("title", p);
+
+    if ((v === "open" || v === "-") && !state.finished && !busy) {
+      poly.style.cursor = "pointer";
+      poly.addEventListener("click", () => onCell(p));
+    } else if (busy && (v === "open" || v === "-")) {
+      poly.style.cursor = "wait";
+    }
+    svg.appendChild(poly);
+
+    // stone circle for occupied (Little Golem look)
+    if (v === "B" || v === "black" || v === "W" || v === "white") {
+      const circ = document.createElementNS(NS, "circle");
+      circ.setAttribute("cx", cx);
+      circ.setAttribute("cy", cy);
+      circ.setAttribute("r", size * 0.42);
+      circ.setAttribute(
+        "fill",
+        v === "B" || v === "black" ? "#0d0d0d" : "#faf8f5"
+      );
+      circ.setAttribute(
+        "stroke",
+        v === "B" || v === "black" ? "#555" : "#ccc"
+      );
+      circ.setAttribute("stroke-width", "1.5");
+      circ.style.pointerEvents = "none";
+      svg.appendChild(circ);
+    }
+
+    const lab = document.createElementNS(NS, "text");
+    lab.setAttribute("x", cx);
+    lab.setAttribute("y", cy);
+    lab.setAttribute(
+      "class",
+      "hex-label" +
+        (v === "B" || v === "black"
+          ? " onB"
+          : v === "W" || v === "white"
+            ? " onW"
+            : "")
+    );
+    lab.textContent = p;
+    svg.appendChild(lab);
+  }
+
+  // Column letters along top (row 0)
+  for (let c = 0; c <= maxC; c++) {
+    const lab = String.fromCharCode(97 + c) + "1";
+    if (!centers[lab] && c === 0) {
+      /* skip if no a1 */
+    }
+    const topLab = String.fromCharCode(97 + c) + "1";
+    // place letter above first row cell of this col if exists
+    const any = positions.find(
+      (p) => coords[p] && coords[p].col === c && coords[p].row === 0
+    );
+    if (!any) continue;
+    const [x, y] = centers[any];
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("x", x);
+    t.setAttribute("y", y - size * 1.15);
+    t.setAttribute("class", "coord");
+    t.textContent = String.fromCharCode(97 + c);
+    svg.appendChild(t);
+  }
+  // Row numbers along left (col 0)
+  for (let r = 0; r <= maxR; r++) {
+    const any = positions.find(
+      (p) => coords[p] && coords[p].col === 0 && coords[p].row === r
+    );
+    if (!any) continue;
+    const [x, y] = centers[any];
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("x", x - size * 1.25);
+    t.setAttribute("y", y);
+    t.setAttribute("class", "coord");
+    t.textContent = String(r + 1);
+    svg.appendChild(t);
+  }
+}
+
+function renderSquareBoard(cells) {
+  const table = $("board");
+  const svg = $("hexSvg");
+  const legend = $("hexLegend");
+  if (table) table.style.display = "table";
+  if (svg) {
+    svg.style.display = "none";
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+  }
+  if (legend) legend.style.display = "none";
+
   table.innerHTML = "";
-  const cells = state.cells || {};
   const positions = Object.keys(cells);
   if (!positions.length) {
     const tr = document.createElement("tr");
@@ -190,8 +409,6 @@ function render() {
   const rows = [
     ...new Set(positions.map((p) => parseInt(p.slice(1), 10))),
   ].sort((a, b) => a - b);
-  const start = new Set(state.start_border || []);
-  const end = new Set(state.end_border || []);
 
   for (const r of rows) {
     const tr = document.createElement("tr");
@@ -207,12 +424,8 @@ function render() {
       const v = cells[pos];
       td.className =
         v === "B" || v === "black" ? "B" : v === "W" || v === "white" ? "W" : "open";
-      if (state.kind === "hex") td.classList.add("hex");
-      if (start.has(pos)) td.classList.add("start");
-      if (end.has(pos)) td.classList.add("end");
       td.textContent = v === "open" || v === "-" ? "" : String(v)[0].toUpperCase();
       td.title = pos;
-      // Only accept clicks when not busy, game open, and cell open
       if ((v === "open" || v === "-") && !state.finished && !busy) {
         td.onclick = () => onCell(pos);
       } else if (busy && (v === "open" || v === "-")) {
@@ -221,6 +434,33 @@ function render() {
       tr.appendChild(td);
     }
     table.appendChild(tr);
+  }
+}
+
+function render() {
+  if (!state) return;
+  $("stMode").textContent = state.play_mode || playMode;
+  $("status").textContent = busy
+    ? "Waiting for solver…"
+    : state.finished
+      ? state.winner
+        ? `Over — ${state.winner}`
+        : "Game over"
+      : "Playing";
+  $("tomove").textContent = busy
+    ? "—"
+    : state.finished
+      ? "—"
+      : state.to_move;
+  $("depth").textContent = state.depth_bound ?? "—";
+  $("moves").textContent = state.moves_played ?? "—";
+  $("msg").textContent = state.message || "";
+
+  const cells = state.cells || {};
+  if (state.kind === "hex" && Object.keys(cells).length) {
+    renderHexSvg(cells);
+  } else {
+    renderSquareBoard(cells);
   }
 }
 
