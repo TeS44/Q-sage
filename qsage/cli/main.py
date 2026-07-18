@@ -15,6 +15,38 @@ def _looks_like_positional(path: Path) -> bool:
     return "#positions" in text or "#neighbours" in text
 
 
+def cmd_solve(args: argparse.Namespace) -> int:
+    from qsage.encode import encode_bwnib
+    from qsage.solve import solve_qcir_bloqqer_caqe, solve_qcir_qubi
+    from qsage.solve.result import Status
+
+    if args.qcir:
+        qcir = Path(args.qcir).read_text(encoding="utf-8")
+    elif args.domain and args.problem:
+        if args.encoding != "bwnib":
+            print("only -e bwnib supported for encode+solve", file=sys.stderr)
+            return 2
+        qcir = encode_bwnib(args.domain, args.problem)
+    else:
+        print("solve needs --qcir or (--domain and --problem)", file=sys.stderr)
+        return 2
+
+    if args.backend == "qubi":
+        res = solve_qcir_qubi(qcir, timeout=args.timeout)
+    elif args.backend == "bloqqer+caqe":
+        res = solve_qcir_bloqqer_caqe(qcir, timeout=args.timeout)
+    else:
+        print(f"unknown backend {args.backend}", file=sys.stderr)
+        return 2
+
+    print(f"{res.backend}: {res.status.value} ({res.seconds:.2f}s) {res.message}")
+    if res.status is Status.ERROR:
+        return 2
+    if res.status is Status.TIMEOUT:
+        return 3
+    return 0 if res.status in (Status.SAT, Status.UNSAT) else 1
+
+
 def cmd_encode(args: argparse.Namespace) -> int:
     from qsage.encode import encode_bwnib, normalize_qcir, qcir_to_qdimacs
 
@@ -102,6 +134,20 @@ def main(argv: list[str] | None = None) -> None:
         help="strip QCIR comments/blank lines (for comparing goldens)",
     )
     e.set_defaults(func=cmd_encode)
+
+    s = sub.add_parser("solve", help="Solve QCIR with QuBi or Bloqqer+CAQE")
+    s.add_argument("--qcir", help="existing QCIR file (e.g. golden)")
+    s.add_argument("--domain", help="BDDL domain (encode then solve)")
+    s.add_argument("--problem", help="BDDL problem")
+    s.add_argument("-e", "--encoding", default="bwnib")
+    s.add_argument(
+        "--backend",
+        default="qubi",
+        choices=("qubi", "bloqqer+caqe"),
+        help="qubi runs natively on macOS; bloqqer+caqe uses Docker on Mac",
+    )
+    s.add_argument("--timeout", type=int, default=120)
+    s.set_defaults(func=cmd_solve)
 
     args = parser.parse_args(argv)
     if not args.command:
