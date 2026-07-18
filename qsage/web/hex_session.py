@@ -168,21 +168,21 @@ def apply_move(
         raise ValueError("game finished")
     human = sess.get("human_color") or "W"
     mode = sess.get("play_mode") or "qbf"
-    # Human clicks always place the human's colour (White vs AI) — never "whoever is to move".
+    # Human clicks ALWAYS place White when playing vs the engine.
+    # Never use to_move for the stone colour on a human click.
     if as_human and mode in ("qbf", "hybrid", "random"):
-        color = human
+        human = "W"
+        sess["human_color"] = "W"
+        sess["ai_color"] = "B"
+        color = "W"
+        if sess["to_move"] != "W":
+            raise ValueError(
+                "Not your turn — you are White; wait for Black (QBF)"
+            )
     else:
         color = color or sess["to_move"]
-    if as_human and mode in ("qbf", "hybrid", "random"):
-        if sess["to_move"] != human:
-            raise ValueError(
-                f"Not your turn — you are {'White' if human == 'W' else 'Black'}; "
-                f"wait for {'Black' if human == 'W' else 'White'}"
-            )
-        if color != human:
-            raise ValueError(
-                f"You play as {'White' if human == 'W' else 'Black'} only"
-            )
+    if color not in ("B", "W"):
+        raise ValueError(f"bad color {color!r}")
     if pos not in sess["cells"] or sess["cells"][pos] != "open":
         raise ValueError(f"illegal move {pos}")
     if color != sess["to_move"]:

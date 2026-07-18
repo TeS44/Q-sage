@@ -318,38 +318,36 @@ function renderHexSvg(cells) {
     svg.appendChild(poly);
 
     // stone circle for occupied (Little Golem look)
-    if (v === "B" || v === "black" || v === "W" || v === "white") {
+    const isB = v === "B" || v === "black";
+    const isW = v === "W" || v === "white";
+    if (isB || isW) {
       const circ = document.createElementNS(NS, "circle");
       circ.setAttribute("cx", cx);
       circ.setAttribute("cy", cy);
-      circ.setAttribute("r", size * 0.42);
-      circ.setAttribute(
-        "fill",
-        v === "B" || v === "black" ? "#0d0d0d" : "#faf8f5"
-      );
-      circ.setAttribute(
-        "stroke",
-        v === "B" || v === "black" ? "#555" : "#ccc"
-      );
-      circ.setAttribute("stroke-width", "1.5");
+      circ.setAttribute("r", size * 0.45);
+      // Black = dark stone; White = bright stone + blue ring (your pieces)
+      circ.setAttribute("fill", isB ? "#111111" : "#ffffff");
+      circ.setAttribute("stroke", isB ? "#666666" : "#3d8bfd");
+      circ.setAttribute("stroke-width", isW ? "3" : "1.5");
       circ.style.pointerEvents = "none";
       svg.appendChild(circ);
+      // letter on stone so colour is unambiguous
+      const mark = document.createElementNS(NS, "text");
+      mark.setAttribute("x", cx);
+      mark.setAttribute("y", cy);
+      mark.setAttribute("class", "hex-label " + (isB ? "onB" : "onW"));
+      mark.setAttribute("font-size", String(Math.max(10, size * 0.45)));
+      mark.setAttribute("font-weight", "700");
+      mark.textContent = isB ? "B" : "W";
+      svg.appendChild(mark);
+    } else {
+      const lab = document.createElementNS(NS, "text");
+      lab.setAttribute("x", cx);
+      lab.setAttribute("y", cy);
+      lab.setAttribute("class", "hex-label");
+      lab.textContent = p;
+      svg.appendChild(lab);
     }
-
-    const lab = document.createElementNS(NS, "text");
-    lab.setAttribute("x", cx);
-    lab.setAttribute("y", cy);
-    lab.setAttribute(
-      "class",
-      "hex-label" +
-        (v === "B" || v === "black"
-          ? " onB"
-          : v === "W" || v === "white"
-            ? " onW"
-            : "")
-    );
-    lab.textContent = p;
-    svg.appendChild(lab);
   }
 
   // Column letters along top (row 0)
@@ -653,13 +651,30 @@ async function onCell(pos) {
           timeout: 3,
         }),
       });
-      let msg = `You → ${pos}`;
-      if (state.last_ai) {
-        msg += ` · AI ${state.last_ai.color}→${state.last_ai.position} (${state.last_ai.mode})`;
-      } else if (waitingForSolver && !state.finished) {
-        msg += " · (no AI move — maybe not Black’s turn or game over)";
+      // Explicit colours from server (you must be White)
+      if (state.you_just_played) {
+        const y = state.you_just_played;
+        log(`You played ${y.label} at ${y.position}`);
+        if (y.color !== "W") {
+          log("WARNING: expected White stone for your move — report this bug");
+        }
+      } else {
+        log(`You → ${pos} (White)`);
       }
-      log(msg);
+      if (state.opponent_just_played) {
+        const o = state.opponent_just_played;
+        log(
+          `QBF played ${o.label} at ${o.position}` +
+            (o.mode ? ` (${o.mode})` : "")
+        );
+      } else if (state.last_ai && state.last_ai.color === "B") {
+        log(
+          `QBF played Black at ${state.last_ai.position} (${state.last_ai.mode})`
+        );
+      }
+      if (state.your_turn) {
+        log("→ Your turn again (White)");
+      }
     }
   } catch (e) {
     log("Error: " + e.message);

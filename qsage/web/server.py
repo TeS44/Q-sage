@@ -241,43 +241,68 @@ class Handler(BaseHTTPRequestHandler):
                 if sess.get("kind") != "hex":
                     self._json(400, {"error": "board moves only for hex/certificate"})
                     return
-                pos = body["position"]
+                pos = str(body.get("position") or "").strip()
                 mode = body.get("opponent") or sess.get("play_mode") or "qbf"
-                sess["play_mode"] = mode if mode in ("qbf", "hybrid", "random", "none") else sess.get("play_mode") or "qbf"
-                human = sess.get("human_color") or "W"
-                ai = sess.get("ai_color") or "B"
+                if mode in ("qbf", "hybrid", "random", "none"):
+                    sess["play_mode"] = mode
+                # Fixed roles for vs-engine games
+                if sess["play_mode"] in ("qbf", "hybrid", "random"):
+                    sess["human_color"] = "W"
+                    sess["ai_color"] = "B"
+                human = "W"
+                ai = "B"
                 t_ai = float(body.get("timeout") or 2.0)
 
-                # If AI still to move (e.g. opening failed), play AI first
+                # Strict: never place Black on a human click. If Black to move,
+                # refuse (opening should already have been done in /api/new).
                 if (
                     sess["play_mode"] in ("qbf", "hybrid", "random")
-                    and sess["to_move"] == ai
-                    and not sess["finished"]
+                    and sess.get("to_move") != human
+                    and not sess.get("finished")
                 ):
-                    hex_session.maybe_play_ai(sess, timeout=t_ai)
-                    if sess["to_move"] != human and not sess["finished"]:
-                        self._json(
-                            400,
-                            {
-                                "error": (
-                                    "Still opponent's turn (Black). "
-                                    "Wait for AI or click “AI / strategy move”."
-                                ),
-                                "state": hex_session.public_hex(sess),
-                            },
-                        )
-                        return
+                    self._json(
+                        400,
+                        {
+                            "error": (
+                                "Not your turn (you are White). "
+                                "Black (QBF) should move first — click “AI / strategy move” "
+                                "or reload the instance."
+                            ),
+                            "state": hex_session.public_hex(sess),
+                        },
+                    )
+                    return
 
-                # Human places only White (forced in apply_move)
-                hex_session.apply_move(sess, pos, color=human, as_human=True)
-                # Black replies
+                # Human always places White on the clicked cell
+                hex_session.apply_move(sess, pos, color="W", as_human=True)
+                # Sanity: clicked cell must be White
+                if sess["cells"].get(pos) != "W":
+                    self._json(
+                        500,
+                        {
+                            "error": f"internal: expected White on {pos}, got {sess['cells'].get(pos)}"
+                        },
+                    )
+                    return
+
+                # Then Black (QBF) replies on a *different* open cell
                 if (
                     not sess["finished"]
                     and sess["to_move"] == ai
                     and sess["play_mode"] in ("hybrid", "qbf", "random")
                 ):
                     hex_session.maybe_play_ai(sess, timeout=t_ai)
-                self._json(200, hex_session.public_hex(sess))
+
+                pub = hex_session.public_hex(sess)
+                pub["you_just_played"] = {"position": pos, "color": "W", "label": "White"}
+                if sess.get("last_ai") and sess["last_ai"].get("color") == "B":
+                    pub["opponent_just_played"] = {
+                        "position": sess["last_ai"]["position"],
+                        "color": "B",
+                        "label": "Black",
+                        "mode": sess["last_ai"].get("mode"),
+                    }
+                self._json(200, pub)
                 return
 
             if u.path == "/api/ai":
