@@ -101,6 +101,8 @@ Makes golden regeneration and student setup harder.
 
 **Fix later:** lazy import only when visualization is requested.
 
+**Status (2026-07-18):** Partially fixed — `Q-sage.py` lazy-imports pyvis only for `--qcir_viz 1`. Still needs `networkx` via stuttering_bounds.
+
 ---
 
 ### #12 Dual `.pg` formats

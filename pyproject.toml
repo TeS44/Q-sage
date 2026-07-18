@@ -12,6 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "Q-sage contributors" }]
 dependencies = [
     "lark>=1.1",
+    "networkx>=3.0",  # legacy bwnib path (stuttering bounds)
 ]
 
 [project.optional-dependencies]

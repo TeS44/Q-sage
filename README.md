@@ -13,7 +13,10 @@ pip install -e ".[dev]"
 qsage parse --domain Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig \
             --problem Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_9_tic.ig
 qsage parse --problem Benchmarks/B-Hex/hein_04_3x3-05.pg
-pytest tests/parse -q
+qsage encode --domain Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig \
+             --problem Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_3_domino.ig \
+             -e bwnib --normalize --out /tmp/out.qcir
+pytest tests/parse tests/encode -q
 ```
 
 ## Positional Games, lifted Hex encodings:
