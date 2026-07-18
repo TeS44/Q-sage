@@ -42,11 +42,23 @@ Dependencies: `pip install python-sat` (see SQval `requirements.txt`).
 | Sample cert + meta | `testcases/index_general_certificates/` |
 | Pedant / depqbf cert generation | still via `legacy/` solvers (not yet a first-class `qsage` API) |
 
-## Planned `qsage` integration
+## `qsage` integration (current)
 
-1. Submodule or documented dependency on **SQval** for validation + equivalence.  
-2. `qsage cert validate` / `qsage cert equivalent` thin wrappers.  
-3. Optional Pedant path to *generate* AIGER certificates from QCIR/QDIMACS.  
-4. Wire browser UI (#3) to SQval-style play (static cert or dynamic solver).
+```bash
+bash scripts/setup_sqval.sh    # clones third_party/SQval + python-sat
+
+# Winning-strategy equivalence (SQval + DepQBF; Docker on Mac/Windows)
+qsage cert demo-equivalence
+# or:
+qsage cert equivalence --demo
+
+# Full SQval CLI (interactive validation — needs Linux solvers / WSL for QBF)
+qsage cert validate -- --instance path/to/qbf.qcir --status 1 --player user --validation dynamic
+qsage cert validate -- --certificate path/to/cert.aag --instance path/to/qbf.qcir
+```
+
+On **macOS**, equivalence demos use **Docker** (`linux/amd64`) because SQval ships DepQBF as a Linux binary.
+
+Still TODO: Pedant-based *generation* of AIGER certificates from our encodings; deeper mid-game cert play in the web UI.
 
 Do **not** reimplement SQval’s algorithms here; call into that project.

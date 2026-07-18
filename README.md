@@ -185,9 +185,24 @@ qsage play certificate -- --certificate_path path/to/certificate.cnf --player us
 
 Planned local web UI: [issue #3](https://github.com/TeS44/Q-sage/issues/3).
 
-### Certificates (full / partial)
+### Certificates (full / partial) — SQval
 
-For scalable QBF validation and winning-strategy equivalence, use **[SQval](https://github.com/irfansha/SQval)** (recommended over reimplementing cert logic here). See [`docs/CERTIFICATES.md`](docs/CERTIFICATES.md) and the SAT 2023 paper [LIPIcs SAT.2023.24](https://drops.dagstuhl.de/storage/00lipics/lipics-vol271-sat2023/LIPIcs.SAT.2023.24/LIPIcs.SAT.2023.24.pdf).
+```bash
+bash scripts/setup_sqval.sh
+qsage cert demo-equivalence          # Hein_04 LN cert → SN instance (Docker on Mac)
+qsage cert validate -- …             # passthrough to SQval interactive_validation.py
+```
+
+Details: [`docs/CERTIFICATES.md`](docs/CERTIFICATES.md) · [SQval](https://github.com/irfansha/SQval) · [paper](https://drops.dagstuhl.de/storage/00lipics/lipics-vol271-sat2023/LIPIcs.SAT.2023.24/LIPIcs.SAT.2023.24.pdf)
+
+### Web UI (local)
+
+```bash
+qsage web
+# open http://127.0.0.1:8765/
+```
+
+Hex board play (click cells, optional QuBi check on the original puzzle). Certificate-heavy validation stays on the SQval CLI for now.
 
 ---
 

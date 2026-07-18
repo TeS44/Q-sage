@@ -15,6 +15,84 @@ def _looks_like_positional(path: Path) -> bool:
     return "#positions" in text or "#neighbours" in text
 
 
+def cmd_cert_equivalence(args: argparse.Namespace) -> int:
+    from qsage.strategy import sqval
+
+    if args.demo or args.cert_cmd == "demo-equivalence":
+        paths = sqval.demo_equivalence_paths()
+        missing = [k for k, p in paths.items() if not p.is_file()]
+        if missing:
+            print(
+                "SQval demo files missing:",
+                ", ".join(missing),
+                "\nRun: bash scripts/setup_sqval.sh",
+                file=sys.stderr,
+            )
+            return 2
+        res = sqval.run_equivalence(
+            paths["instance1"],
+            paths["instance2"],
+            paths["certificate"],
+            paths["shared_variables"],
+        )
+    else:
+        if not all(
+            [
+                args.instance1,
+                args.instance2,
+                args.certificate,
+                args.shared_variables,
+            ]
+        ):
+            print(
+                "need --instance1 --instance2 --certificate --shared-variables "
+                "(or --demo)",
+                file=sys.stderr,
+            )
+            return 2
+        res = sqval.run_equivalence(
+            args.instance1,
+            args.instance2,
+            args.certificate,
+            args.shared_variables,
+        )
+    print(res.message)
+    if res.raw.strip():
+        # show last non-empty lines
+        lines = [ln for ln in res.raw.strip().splitlines() if ln.strip()]
+        for ln in lines[-8:]:
+            print(ln)
+    return 0 if res.equivalent else 1
+
+
+def cmd_cert_demo(args: argparse.Namespace) -> int:
+    args.demo = True
+    args.cert_cmd = "demo-equivalence"
+    args.instance1 = args.instance2 = args.certificate = args.shared_variables = None
+    return cmd_cert_equivalence(args)
+
+
+def cmd_cert_validate(args: argparse.Namespace) -> int:
+    from qsage.strategy import sqval
+
+    extra = list(args.sqval_args or [])
+    if extra and extra[0] == "--":
+        extra = extra[1:]
+    try:
+        return sqval.launch_interactive_validation(extra)
+    except FileNotFoundError as e:
+        print(e, file=sys.stderr)
+        return 2
+
+
+def cmd_web(args: argparse.Namespace) -> int:
+    from qsage.web.server import serve
+
+    print(f"Open http://{args.host}:{args.port}/  (Ctrl+C to stop)")
+    serve(args.host, args.port)
+    return 0
+
+
 def cmd_play(args: argparse.Namespace) -> int:
     from qsage.play import run_certificate_play, run_hex_interactive
 
@@ -216,9 +294,57 @@ def main(argv: list[str] | None = None) -> None:
     )
     pl.set_defaults(func=cmd_play)
 
+    c = sub.add_parser(
+        "cert",
+        help="Certificate validation via SQval (issue #9)",
+    )
+    c_sub = c.add_subparsers(dest="cert_cmd")
+    c_eq = c_sub.add_parser(
+        "equivalence",
+        help="Winning-strategy equivalence (two QDIMACS + AIGER cert)",
+    )
+    c_eq.add_argument("--instance1", help="QDIMACS instance 1")
+    c_eq.add_argument("--instance2", help="QDIMACS instance 2")
+    c_eq.add_argument("--certificate", help="AIGER certificate for instance1")
+    c_eq.add_argument("--shared-variables", help="shared variables file")
+    c_eq.add_argument(
+        "--demo",
+        action="store_true",
+        help="run SQval hein_04_05 LN→SN demo if present",
+    )
+    c_eq.set_defaults(func=cmd_cert_equivalence)
+
+    c_val = c_sub.add_parser(
+        "validate",
+        help="Launch SQval interactive_validation.py",
+    )
+    c_val.add_argument(
+        "sqval_args",
+        nargs=argparse.REMAINDER,
+        help="args for SQval (use -- before flags)",
+    )
+    c_val.set_defaults(func=cmd_cert_validate)
+
+    c_demo = c_sub.add_parser(
+        "demo-equivalence",
+        help="Shortcut: SQval Hein_04 LN vs SN equivalence demo",
+    )
+    c_demo.set_defaults(func=cmd_cert_demo)
+
+    w = sub.add_parser(
+        "web",
+        help="Local web UI for board play (issue #3 MVP)",
+    )
+    w.add_argument("--host", default="127.0.0.1")
+    w.add_argument("--port", type=int, default=8765)
+    w.set_defaults(func=cmd_web)
+
     args = parser.parse_args(argv)
     if not args.command:
         parser.print_help()
+        raise SystemExit(0)
+    if args.command == "cert" and not getattr(args, "func", None):
+        c.print_help()
         raise SystemExit(0)
     raise SystemExit(args.func(args))
 

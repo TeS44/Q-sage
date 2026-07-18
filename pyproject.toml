@@ -39,7 +39,7 @@ qsage = "qsage.cli.main:main"
 include = ["qsage*"]
 
 [tool.setuptools.package-data]
-qsage = ["parse/grammars/*.lark"]
+qsage = ["parse/grammars/*.lark", "web/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

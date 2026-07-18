@@ -56,11 +56,7 @@ All items below are open on GitHub: [TeS44/Q-sage issues](https://github.com/TeS
 
 ### #7 Port positional paper encodings with golden tests
 
-Hex / HTTT positional encodings needed for arXiv:2301.07345 experiments.
-
-**Candidates:** `pg`, `cp`, `ibign` (confirm in #6).
-
-**Done when:** same normalized-QCIR approach as #4; small modules, little duplication.
+**Status:** Done — goldens + `pg`/`cp`/`ibign`, agreement tests, cp black-initial fix.
 
 **Depends on:** #4, #5, #6
 
@@ -70,8 +66,7 @@ Hex / HTTT positional encodings needed for arXiv:2301.07345 experiments.
 
 ### #8 Solver backends: Bloqqer + CAQE, Pedant, QuBi
 
-**Status:** QuBi (native Mac/Linux) + Bloqqer+CAQE (Docker on Mac). Pedant still TODO.  
-`qsage solve --backend qubi|bloqqer+caqe`. Table 2 sample 15/15 match QuBi.
+**Status:** QuBi + Bloqqer+CAQE done. Pedant still optional for cert generation.
 
 **Depends on:** #5 · **Parent:** #2
 
@@ -79,8 +74,8 @@ Hex / HTTT positional encodings needed for arXiv:2301.07345 experiments.
 
 ### #9 Winning-strategy certificates (full + partial)
 
-**Partial:** consume certs via `qsage play certificate` / `legacy/general_interactive_play.py`.  
-Generation API still TODO (Pedant / depqbf cert).
+**Status:** SQval integrated (`scripts/setup_sqval.sh`, `qsage cert …`).  
+Demo equivalence works (Docker on Mac). Pedant *generation* still open.
 
 **Depends on:** #8 · **Feeds:** #3
 
@@ -88,7 +83,7 @@ Generation API still TODO (Pedant / depqbf cert).
 
 ### #10 Split CLI by game type
 
-**Status:** `qsage parse|encode|solve|play` with simple flags. Refine when positional encodings land.
+**Status:** Done for current surface (`parse|encode|solve|play|cert|web`).
 
 **Depends on:** #4, #7 · **Parent:** #2
 
