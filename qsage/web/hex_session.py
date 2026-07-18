@@ -178,7 +178,14 @@ def _write_midgame_pg(sess: dict) -> Path:
     return out
 
 
-def solve_qbf(sess: dict, *, midgame: bool = False, encoding: str = "pg", timeout: int = 90) -> dict:
+def solve_qbf(
+    sess: dict,
+    *,
+    midgame: bool = False,
+    encoding: str = "pg",
+    timeout: float = 3.0,
+) -> dict:
+    """QuBi solve with a hard timeout (default 3s). Never hangs indefinitely."""
     from qsage.encode.positional import encode_positional
     from qsage.solve.qubi import qubi_available, solve_qcir_qubi
 
@@ -190,27 +197,33 @@ def solve_qbf(sess: dict, *, midgame: bool = False, encoding: str = "pg", timeou
     if midgame:
         pg = _write_midgame_pg(sess)
         qcir = encode_positional(pg, encoding)
-        detail = f"mid-game residual ({encoding}), remaining≤{sess['depth_bound'] - sess['moves_played']}"
+        detail = (
+            f"mid-game residual ({encoding}), "
+            f"remaining≤{sess['depth_bound'] - sess['moves_played']}"
+        )
     else:
         qcir = encode_positional(_REPO / sess["path"], encoding)
         detail = f"original puzzle ({encoding})"
-    res = solve_qcir_qubi(qcir, timeout=timeout)
+    res = solve_qcir_qubi(qcir, timeout=float(timeout))
     return {
         "status": res.status.value,
         "seconds": res.seconds,
         "detail": detail,
         "message": res.message,
+        "timeout": float(timeout),
         "meaning": (
             "Black has a winning strategy from this position"
             if res.status.value == "SAT"
             else "Black has no winning strategy within the bound"
             if res.status.value == "UNSAT"
+            else f"No answer within {timeout}s"
+            if res.status.value == "TIMEOUT"
             else res.message
         ),
     }
 
 
-def ai_qbf_black_move(sess: dict, timeout: int = 30) -> str | None:
+def ai_qbf_black_move(sess: dict, timeout: float = 2.0) -> str | None:
     """
     Greedy one-ply: try each open cell as Black; pick first that leaves
     mid-game QBF still SAT (or any legal if all timeout).
@@ -221,20 +234,56 @@ def ai_qbf_black_move(sess: dict, timeout: int = 30) -> str | None:
     if not opens:
         return None
     # Prefer faster heuristic: random among moves that keep SAT
-    random.shuffle(opens)
-    for pos in opens:
-        # try move
+    # Cap how many cells we try so AI never runs opens × timeout forever
+    timeout = float(timeout)
+    budget = min(len(opens), max(1, int(6.0 / max(timeout, 0.5))))
+    candidates = opens[:]
+    random.shuffle(candidates)
+    candidates = candidates[:budget]
+    for pos in candidates:
         apply_move(sess, pos, "B")
         try:
             r = solve_qbf(sess, midgame=True, timeout=timeout)
             good = r.get("status") == "SAT"
         except Exception:
             good = False
-        # undo
         undo(sess)
         if good:
             apply_move(sess, pos, "B")
             sess["last_ai"] = {"color": "B", "position": pos, "mode": "qbf"}
             return pos
-    # fallback random
     return random_move(sess, "B")
+
+
+def ai_hybrid_black_move(sess: dict, *, qbf_timeout: float = 2.0) -> str | None:
+    """
+    Hybrid: partial-cert opening book first, then short QBF, then random.
+
+    Partial certs live under Benchmarks/partial_certs/ (see
+    scripts/generate_partial_certs.py).
+    """
+    if sess["finished"] or sess["to_move"] != "B":
+        return None
+    from qsage.web.partial_certs import lookup_move
+
+    hit = lookup_move(sess["path"], sess["cells"], "B")
+    if hit and hit["move"] in open_cells(sess):
+        apply_move(sess, hit["move"], "B")
+        sess["last_ai"] = {
+            "color": "B",
+            "position": hit["move"],
+            "mode": "hybrid-cert",
+            "ply": hit.get("ply"),
+        }
+        sess["message"] = (
+            f"Hybrid: partial cert move {hit['move']} "
+            f"(book depth {hit.get('hybrid_depth')})"
+        )
+        return hit["move"]
+
+    # QBF with short timeout for interactive feel
+    pos = ai_qbf_black_move(sess, timeout=qbf_timeout)
+    if pos and sess.get("last_ai"):
+        sess["last_ai"]["mode"] = "hybrid-qbf"
+        sess["message"] = f"Hybrid: QBF tail move {pos}"
+    return pos

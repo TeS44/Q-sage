@@ -155,6 +155,7 @@ Gex_generators/intermediate_files/*
 # Keep paper QCIR goldens tracked
 !Benchmarks/positional_goldens/
 !Benchmarks/positional_goldens/**
+!Benchmarks/playable_qbf.json
 !Benchmarks/SAT2023_GDDL/
 !Benchmarks/SAT2023_GDDL/**
 !Benchmarks/B-Hex/

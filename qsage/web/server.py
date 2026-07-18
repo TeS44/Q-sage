@@ -1,25 +1,62 @@
 """
 Local web UI for interactive play (issue #3).
 
-Modes:
-  - Hex boards: human, random, QBF (initial / mid-game), QBF-guided Black
-  - Certificates: play against a winning-strategy CNF cert
-  - Grid problems: list + “does Black win?” via bwnib+QuBi
+- Pick **domain** then **instance** (buttons)
+- Run with **QBF**, **Certificate**, or **Hybrid** (partial cert openings)
 """
 
 from __future__ import annotations
 
 import json
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from qsage.web.catalog import list_all_problems
 from qsage.web import cert_session, hex_session
+from qsage.web.catalog import list_all_problems
+from qsage.web.partial_certs import has_partial, list_partial_certs, load_partial
 
 _REPO = Path(__file__).resolve().parents[2]
 _STATIC = Path(__file__).parent / "static"
 _SESSIONS: dict[str, dict] = {}
+
+
+def _domains() -> list[dict]:
+    """Unique domains/groups with counts and play modes."""
+    probs = list_all_problems()
+    groups: dict[str, dict] = {}
+    for p in probs:
+        g = p["group"]
+        if g not in groups:
+            kind = p["kind"]
+            modes = []
+            if kind == "hex":
+                modes = ["qbf", "hybrid"]
+            elif kind == "certificate":
+                modes = ["certificate"]
+            elif kind == "grid":
+                modes = ["qbf"]
+            groups[g] = {
+                "id": g,
+                "label": g,
+                "kind": kind,
+                "count": 0,
+                "modes": modes,
+            }
+        groups[g]["count"] += 1
+    # stable order
+    order = []
+    for key in (
+        "Hex (B-Hex)",
+        "Hex (GDDL)",
+        "Certificates (strategy)",
+    ):
+        if key in groups:
+            order.append(groups.pop(key))
+    for g in sorted(groups.values(), key=lambda x: x["label"]):
+        order.append(g)
+    return order
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -34,12 +71,20 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _json(self, code: int, obj: object) -> None:
-        self._send(200 if code == 200 else code, json.dumps(obj).encode(), "application/json; charset=utf-8")
+        self._send(
+            code,
+            json.dumps(obj).encode(),
+            "application/json; charset=utf-8",
+        )
 
     def do_GET(self) -> None:
         u = urlparse(self.path)
         if u.path in ("/", "/index.html"):
-            self._send(200, (_STATIC / "index.html").read_bytes(), "text/html; charset=utf-8")
+            self._send(
+                200,
+                (_STATIC / "index.html").read_bytes(),
+                "text/html; charset=utf-8",
+            )
             return
         if u.path.startswith("/static/"):
             name = u.path[len("/static/") :]
@@ -56,49 +101,100 @@ class Handler(BaseHTTPRequestHandler):
             )
             self._send(200, f.read_bytes(), ctype)
             return
-        if u.path == "/api/problems":
-            self._json(200, {"problems": list_all_problems()})
+
+        if u.path == "/api/domains":
+            self._json(200, {"domains": _domains()})
             return
+
+        if u.path == "/api/problems":
+            qs = parse_qs(u.query)
+            domain = (qs.get("domain") or [None])[0]
+            all_flag = (qs.get("all") or ["0"])[0] in ("1", "true", "yes")
+            probs = list_all_problems(qbf_only=not all_flag)
+            if domain:
+                probs = [p for p in probs if p["group"] == domain]
+            for p in probs:
+                p["has_partial"] = False  # partial certs deferred
+            self._json(
+                200,
+                {
+                    "problems": probs,
+                    "qbf_only": not all_flag,
+                    "note": "QuBi hard-killed after timeout (default 3s); see playable_qbf.json",
+                },
+            )
+            return
+
+        if u.path == "/api/partials":
+            self._json(200, {"partials": list_partial_certs()})
+            return
+
         if u.path == "/api/new":
             qs = parse_qs(u.query)
             path = (qs.get("path") or [None])[0]
             kind = (qs.get("kind") or ["hex"])[0]
+            mode = (qs.get("mode") or ["qbf"])[0]  # qbf | certificate | hybrid
             if not path:
                 self._json(400, {"error": "path required"})
                 return
             try:
-                if kind == "certificate":
+                if kind == "certificate" or mode == "certificate":
                     sess = cert_session.new_cert_session(path)
+                    sess["play_mode"] = "certificate"
                     _SESSIONS[sess["session"]] = sess
-                    self._json(200, cert_session.public_cert(sess))
-                elif kind == "grid":
-                    # Grid: store path/domain for solve-only session (no cell play yet)
-                    domain = (qs.get("domain") or [None])[0]
-                    import uuid as _uuid
-
-                    sid = _uuid.uuid4().hex
+                    pub = cert_session.public_cert(sess)
+                    pub["play_mode"] = "certificate"
+                    self._json(200, pub)
+                    return
+                if kind == "grid":
+                    domain = (qs.get("domain_file") or qs.get("domain") or [None])[0]
+                    # catalog uses "domain" key for domain.ig path
+                    sid = uuid.uuid4().hex
+                    # find domain from catalog if missing
+                    if not domain:
+                        for p in list_all_problems():
+                            if p["path"] == path:
+                                domain = p.get("domain")
+                                break
                     sess = {
                         "session": sid,
                         "kind": "grid",
                         "path": path,
                         "domain": domain,
+                        "play_mode": "qbf",
                         "cells": {},
                         "to_move": "—",
                         "finished": False,
                         "winner": None,
                         "depth_bound": 0,
                         "moves_played": 0,
-                        "message": "Grid instance — use “QBF: Black wins?” to solve (bwnib).",
+                        "message": "Grid — use QBF to check if Black wins (bwnib).",
                     }
                     _SESSIONS[sid] = sess
                     self._json(200, sess)
-                else:
-                    sess = hex_session.new_hex_session(path)
-                    _SESSIONS[sess["session"]] = sess
-                    self._json(200, hex_session.public_hex(sess))
+                    return
+
+                # hex
+                sess = hex_session.new_hex_session(path)
+                sess["play_mode"] = mode if mode in ("qbf", "hybrid", "random") else "qbf"
+                if sess["play_mode"] == "hybrid":
+                    book = load_partial(path)
+                    n = len((book or {}).get("layers") or [])
+                    sess["message"] = (
+                        f"Hybrid mode: partial cert ({n} opening plies) then QBF."
+                        if book
+                        else "Hybrid mode: no partial cert yet — using QBF/random. "
+                        "Run: python3 scripts/generate_partial_certs.py"
+                    )
+                _SESSIONS[sess["session"]] = sess
+                pub = hex_session.public_hex(sess)
+                pub["play_mode"] = sess["play_mode"]
+                pub["has_partial"] = has_partial(path)
+                self._json(200, pub)
             except Exception as e:
                 self._json(400, {"error": str(e)})
             return
+
         self._json(404, {"error": "not found"})
 
     def do_POST(self) -> None:
@@ -118,25 +214,27 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(400, {"error": "unknown session"})
                     return
                 if sess.get("kind") == "certificate":
-                    # white user move
                     pub = cert_session.white_move(sess, body["position"])
+                    pub["play_mode"] = "certificate"
                     self._json(200, pub)
                     return
                 if sess.get("kind") != "hex":
-                    self._json(400, {"error": "moves only for hex/certificate"})
+                    self._json(400, {"error": "board moves only for hex/certificate"})
                     return
                 pos = body["position"]
-                mode = body.get("opponent") or "random"  # random | none | qbf
+                # opponent: from body or session play_mode
+                mode = body.get("opponent") or sess.get("play_mode") or "random"
                 hex_session.apply_move(sess, pos)
-                last = None
                 if not sess["finished"] and sess["to_move"] == "B":
-                    if mode == "random":
-                        last = hex_session.random_move(sess, "B")
+                    t_ai = float(body.get("timeout") or 2.0)
+                    if mode == "hybrid":
+                        hex_session.ai_hybrid_black_move(sess, qbf_timeout=t_ai)
                     elif mode == "qbf":
-                        last = hex_session.ai_qbf_black_move(sess)
+                        hex_session.ai_qbf_black_move(sess, timeout=t_ai)
+                    elif mode == "random":
+                        hex_session.random_move(sess, "B")
                 pub = hex_session.public_hex(sess)
-                if last:
-                    pub["last_ai"] = sess.get("last_ai")
+                pub["play_mode"] = sess.get("play_mode")
                 self._json(200, pub)
                 return
 
@@ -144,21 +242,23 @@ class Handler(BaseHTTPRequestHandler):
                 if not sess:
                     self._json(400, {"error": "unknown session"})
                     return
-                mode = body.get("mode") or "random"
-                color = body.get("color") or sess.get("to_move")
+                mode = body.get("mode") or sess.get("play_mode") or "random"
+                t_ai = float(body.get("timeout") or 2.0)
                 if sess.get("kind") == "certificate":
-                    if mode in ("strategy", "random", "qbf"):
-                        pub = cert_session.strategy_black_move(sess)
-                        self._json(200, pub)
-                        return
+                    pub = cert_session.strategy_black_move(sess)
+                    pub["play_mode"] = "certificate"
+                    self._json(200, pub)
+                    return
                 if sess.get("kind") == "hex":
-                    if mode == "random":
-                        hex_session.random_move(sess, color)
-                    elif mode == "qbf" and color == "B":
-                        hex_session.ai_qbf_black_move(sess)
+                    if mode in ("hybrid", "strategy"):
+                        hex_session.ai_hybrid_black_move(sess, qbf_timeout=t_ai)
+                    elif mode == "qbf":
+                        hex_session.ai_qbf_black_move(sess, timeout=t_ai)
                     else:
-                        hex_session.random_move(sess, color)
-                    self._json(200, hex_session.public_hex(sess))
+                        hex_session.random_move(sess, sess.get("to_move") or "B")
+                    pub = hex_session.public_hex(sess)
+                    pub["play_mode"] = sess.get("play_mode")
+                    self._json(200, pub)
                     return
                 self._json(400, {"error": "ai not available"})
                 return
@@ -168,10 +268,11 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(400, {"error": "undo only for hex"})
                     return
                 hex_session.undo(sess)
-                # undo twice if last was AI black after white
                 if body.get("undo_ai") and sess["history"]:
                     hex_session.undo(sess)
-                self._json(200, hex_session.public_hex(sess))
+                pub = hex_session.public_hex(sess)
+                pub["play_mode"] = sess.get("play_mode")
+                self._json(200, pub)
                 return
 
             if u.path == "/api/solve":
@@ -180,37 +281,51 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 mid = bool(body.get("midgame"))
                 enc = body.get("encoding") or "pg"
+                # Hard cap for interactive UI (QuBi has no internal timer)
+                timeout = float(body.get("timeout") or 3.0)
+                timeout = max(0.5, min(timeout, 30.0))
                 if sess.get("kind") == "hex":
-                    self._json(200, hex_session.solve_qbf(sess, midgame=mid, encoding=enc))
+                    self._json(
+                        200,
+                        hex_session.solve_qbf(
+                            sess, midgame=mid, encoding=enc, timeout=timeout
+                        ),
+                    )
                     return
                 if sess.get("kind") == "grid":
                     from qsage.encode.bwnib import encode_bwnib
                     from qsage.solve.qubi import qubi_available, solve_qcir_qubi
 
                     if not qubi_available():
-                        self._json(200, {"status": "ERROR", "detail": "QuBi missing"})
+                        self._json(
+                            200,
+                            {"status": "ERROR", "detail": "QuBi missing"},
+                        )
                         return
                     domain = _REPO / (sess.get("domain") or "")
                     problem = _REPO / sess["path"]
                     qcir = encode_bwnib(domain, problem)
-                    res = solve_qcir_qubi(qcir, timeout=int(body.get("timeout") or 120))
+                    res = solve_qcir_qubi(qcir, timeout=timeout)
                     self._json(
                         200,
                         {
                             "status": res.status.value,
                             "seconds": res.seconds,
                             "detail": "bwnib on grid instance",
+                            "timeout": timeout,
                             "meaning": (
                                 "Black winning strategy (SAT)"
                                 if res.status.value == "SAT"
                                 else "No Black win in bound (UNSAT)"
                                 if res.status.value == "UNSAT"
+                                else f"No answer within {timeout}s"
+                                if res.status.value == "TIMEOUT"
                                 else res.message
                             ),
                         },
                     )
                     return
-                self._json(400, {"error": "solve not supported for this kind"})
+                self._json(400, {"error": "solve not supported"})
                 return
 
             self._json(404, {"error": "not found"})

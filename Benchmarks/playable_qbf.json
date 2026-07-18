@@ -1,0 +1,687 @@
+{
+  "timeout_seconds": 3.0,
+  "count": 67,
+  "scan_seconds": 162.46,
+  "by_game": {
+    "breakthrough": 4,
+    "breakthrough-second-player": 5,
+    "connect-c": 11,
+    "domineering": 19,
+    "evader_pursuer": 2,
+    "evader_pursuer_dual": 3,
+    "httt": 11,
+    "hex": 12
+  },
+  "instances": [
+    {
+      "game": "breakthrough",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough/2x4_13.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough/domain.ig",
+      "label": "breakthrough/2x4_13.ig",
+      "status": "UNSAT",
+      "seconds": 0.068,
+      "encode_seconds": 0.057
+    },
+    {
+      "game": "breakthrough",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough/2x5_17.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough/domain.ig",
+      "label": "breakthrough/2x5_17.ig",
+      "status": "UNSAT",
+      "seconds": 0.805,
+      "encode_seconds": 0.005
+    },
+    {
+      "game": "breakthrough",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough/2x6_15.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough/domain.ig",
+      "label": "breakthrough/2x6_15.ig",
+      "status": "SAT",
+      "seconds": 0.849,
+      "encode_seconds": 0.005
+    },
+    {
+      "game": "breakthrough",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough/3x6_9.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough/domain.ig",
+      "label": "breakthrough/3x6_9.ig",
+      "status": "UNSAT",
+      "seconds": 0.706,
+      "encode_seconds": 0.008
+    },
+    {
+      "game": "breakthrough-second-player",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough-second-player/2x4_8.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough-second-player/domain.ig",
+      "label": "breakthrough-second-player/2x4_8.ig",
+      "status": "SAT",
+      "seconds": 0.032,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "breakthrough-second-player",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough-second-player/2x5_10.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough-second-player/domain.ig",
+      "label": "breakthrough-second-player/2x5_10.ig",
+      "status": "SAT",
+      "seconds": 0.083,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "breakthrough-second-player",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough-second-player/2x6_14.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough-second-player/domain.ig",
+      "label": "breakthrough-second-player/2x6_14.ig",
+      "status": "UNSAT",
+      "seconds": 0.55,
+      "encode_seconds": 0.004
+    },
+    {
+      "game": "breakthrough-second-player",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough-second-player/3x4_12.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough-second-player/domain.ig",
+      "label": "breakthrough-second-player/3x4_12.ig",
+      "status": "SAT",
+      "seconds": 2.784,
+      "encode_seconds": 0.005
+    },
+    {
+      "game": "breakthrough-second-player",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough-second-player/3x6_10.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/breakthrough-second-player/domain.ig",
+      "label": "breakthrough-second-player/3x6_10.ig",
+      "status": "UNSAT",
+      "seconds": 2.12,
+      "encode_seconds": 0.004
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/2x2_3_connect2.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/2x2_3_connect2.ig",
+      "status": "SAT",
+      "seconds": 0.011,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/3x3_3_connect2.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/3x3_3_connect2.ig",
+      "status": "SAT",
+      "seconds": 0.017,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/3x3_9_connect3.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/3x3_9_connect3.ig",
+      "status": "UNSAT",
+      "seconds": 0.038,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/4x4_15_connect4.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/4x4_15_connect4.ig",
+      "status": "UNSAT",
+      "seconds": 0.821,
+      "encode_seconds": 0.004
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/4x4_3_connect2.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/4x4_3_connect2.ig",
+      "status": "SAT",
+      "seconds": 0.018,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/4x4_9_connect3.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/4x4_9_connect3.ig",
+      "status": "SAT",
+      "seconds": 0.088,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/5x5_11_connect4.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/5x5_11_connect4.ig",
+      "status": "UNSAT",
+      "seconds": 1.735,
+      "encode_seconds": 0.004
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/5x5_3_connect2.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/5x5_3_connect2.ig",
+      "status": "SAT",
+      "seconds": 0.027,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/5x5_9_connect3.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/5x5_9_connect3.ig",
+      "status": "SAT",
+      "seconds": 0.398,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/6x6_3_connect2.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/6x6_3_connect2.ig",
+      "status": "SAT",
+      "seconds": 0.028,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "connect-c",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/6x6_9_connect3.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/connect-c/domain.ig",
+      "label": "connect-c/6x6_9_connect3.ig",
+      "status": "SAT",
+      "seconds": 0.858,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/2x2_2.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/2x2_2.ig",
+      "status": "SAT",
+      "seconds": 0.006,
+      "encode_seconds": 0.001
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/2x3_4.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/2x3_4.ig",
+      "status": "SAT",
+      "seconds": 0.012,
+      "encode_seconds": 0.001
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/2x4_4.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/2x4_4.ig",
+      "status": "SAT",
+      "seconds": 0.013,
+      "encode_seconds": 0.001
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/2x5_6.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/2x5_6.ig",
+      "status": "UNSAT",
+      "seconds": 0.022,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/2x6_6.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/2x6_6.ig",
+      "status": "SAT",
+      "seconds": 0.024,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/3x2_2.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/3x2_2.ig",
+      "status": "SAT",
+      "seconds": 0.008,
+      "encode_seconds": 0.001
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/3x3_4.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/3x3_4.ig",
+      "status": "SAT",
+      "seconds": 0.016,
+      "encode_seconds": 0.001
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/3x4_6.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/3x4_6.ig",
+      "status": "SAT",
+      "seconds": 0.024,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/3x5_8.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/3x5_8.ig",
+      "status": "SAT",
+      "seconds": 0.044,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/3x6_6.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/3x6_6.ig",
+      "status": "SAT",
+      "seconds": 0.052,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/4x2_5.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/4x2_5.ig",
+      "status": "UNSAT",
+      "seconds": 0.013,
+      "encode_seconds": 0.001
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/4x3_7.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/4x3_7.ig",
+      "status": "UNSAT",
+      "seconds": 0.024,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/4x4_8.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/4x4_8.ig",
+      "status": "SAT",
+      "seconds": 0.046,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/4x5_11.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/4x5_11.ig",
+      "status": "UNSAT",
+      "seconds": 0.354,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/5x2_6.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/5x2_6.ig",
+      "status": "SAT",
+      "seconds": 0.021,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/5x3_8.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/5x3_8.ig",
+      "status": "UNSAT",
+      "seconds": 0.044,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/5x4_10.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/5x4_10.ig",
+      "status": "SAT",
+      "seconds": 0.368,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/6x2_6.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/6x2_6.ig",
+      "status": "SAT",
+      "seconds": 0.023,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "domineering",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/6x3_10.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/domineering/domain.ig",
+      "label": "domineering/6x3_10.ig",
+      "status": "UNSAT",
+      "seconds": 0.125,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "evader_pursuer",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/evader_pursuer/4x4_21_e-4-1_p-1-2.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/evader_pursuer/domain.ig",
+      "label": "evader_pursuer/4x4_21_e-4-1_p-1-2.ig",
+      "status": "UNSAT",
+      "seconds": 2.804,
+      "encode_seconds": 0.015
+    },
+    {
+      "game": "evader_pursuer",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/evader_pursuer/4x4_3_e-4-1_p-2-3.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/evader_pursuer/domain.ig",
+      "label": "evader_pursuer/4x4_3_e-4-1_p-2-3.ig",
+      "status": "SAT",
+      "seconds": 0.028,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "evader_pursuer_dual",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/evader_pursuer_dual/4x4_10_e-4-1_p-2-3.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/evader_pursuer_dual/domain.ig",
+      "label": "evader_pursuer_dual/4x4_10_e-4-1_p-2-3.ig",
+      "status": "UNSAT",
+      "seconds": 0.293,
+      "encode_seconds": 0.007
+    },
+    {
+      "game": "evader_pursuer_dual",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/evader_pursuer_dual/4x4_2_e-4-1_p-1-2.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/evader_pursuer_dual/domain.ig",
+      "label": "evader_pursuer_dual/4x4_2_e-4-1_p-1-2.ig",
+      "status": "SAT",
+      "seconds": 0.027,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "evader_pursuer_dual",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/evader_pursuer_dual/8x8_6_e-8-1_p-2-3.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/evader_pursuer_dual/domain.ig",
+      "label": "evader_pursuer_dual/8x8_6_e-8-1_p-2-3.ig",
+      "status": "SAT",
+      "seconds": 0.892,
+      "encode_seconds": 0.005
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_3_domino.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/3x3_3_domino.ig",
+      "status": "SAT",
+      "seconds": 0.016,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_5_el.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/3x3_5_el.ig",
+      "status": "SAT",
+      "seconds": 0.026,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_9_elly.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/3x3_9_elly.ig",
+      "status": "UNSAT",
+      "seconds": 0.081,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_9_fatty.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/3x3_9_fatty.ig",
+      "status": "UNSAT",
+      "seconds": 0.058,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_9_knobby.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/3x3_9_knobby.ig",
+      "status": "UNSAT",
+      "seconds": 0.073,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_9_tic.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/3x3_9_tic.ig",
+      "status": "UNSAT",
+      "seconds": 0.079,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/3x3_9_tippy.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/3x3_9_tippy.ig",
+      "status": "SAT",
+      "seconds": 0.072,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/4x4_3_domino.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/4x4_3_domino.ig",
+      "status": "SAT",
+      "seconds": 0.018,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/4x4_5_el.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/4x4_5_el.ig",
+      "status": "SAT",
+      "seconds": 0.042,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/4x4_5_tic.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/4x4_5_tic.ig",
+      "status": "SAT",
+      "seconds": 0.042,
+      "encode_seconds": 0.002
+    },
+    {
+      "game": "httt",
+      "kind": "grid",
+      "path": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/4x4_7_elly.ig",
+      "domain": "Benchmarks/SAT2023_GDDL/GDDL_models/httt/domain.ig",
+      "label": "httt/4x4_7_elly.ig",
+      "status": "SAT",
+      "seconds": 0.408,
+      "encode_seconds": 0.003
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/browne_5x5_07.pg",
+      "label": "browne_5x5_07.pg",
+      "status": "UNSAT",
+      "seconds": 2.139,
+      "encode_seconds": 0.002,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_04_3x3-03.pg",
+      "label": "hein_04_3x3-03.pg",
+      "status": "UNSAT",
+      "seconds": 0.018,
+      "encode_seconds": 0.001,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_04_3x3-05.pg",
+      "label": "hein_04_3x3-05.pg",
+      "status": "SAT",
+      "seconds": 0.027,
+      "encode_seconds": 0.001,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_06_4x4-11.pg",
+      "label": "hein_06_4x4-11.pg",
+      "status": "UNSAT",
+      "seconds": 1.112,
+      "encode_seconds": 0.002,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_07_4x4-07.pg",
+      "label": "hein_07_4x4-07.pg",
+      "status": "UNSAT",
+      "seconds": 0.071,
+      "encode_seconds": 0.001,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_07_4x4-09.pg",
+      "label": "hein_07_4x4-09.pg",
+      "status": "SAT",
+      "seconds": 0.431,
+      "encode_seconds": 0.001,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_09_4x4-05.pg",
+      "label": "hein_09_4x4-05.pg",
+      "status": "UNSAT",
+      "seconds": 0.025,
+      "encode_seconds": 0.006,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_09_4x4-07.pg",
+      "label": "hein_09_4x4-07.pg",
+      "status": "SAT",
+      "seconds": 0.04,
+      "encode_seconds": 0.001,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_12_4x4-05.pg",
+      "label": "hein_12_4x4-05.pg",
+      "status": "UNSAT",
+      "seconds": 0.025,
+      "encode_seconds": 0.001,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_12_4x4-07.pg",
+      "label": "hein_12_4x4-07.pg",
+      "status": "SAT",
+      "seconds": 0.05,
+      "encode_seconds": 0.001,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_13_5x5-07.pg",
+      "label": "hein_13_5x5-07.pg",
+      "status": "UNSAT",
+      "seconds": 2.154,
+      "encode_seconds": 0.002,
+      "encoding": "pg"
+    },
+    {
+      "game": "hex",
+      "kind": "hex",
+      "path": "Benchmarks/B-Hex/hein_14_5x5-07.pg",
+      "label": "hein_14_5x5-07.pg",
+      "status": "UNSAT",
+      "seconds": 2.218,
+      "encode_seconds": 0.002,
+      "encoding": "pg"
+    }
+  ]
+}

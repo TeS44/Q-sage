@@ -1,11 +1,15 @@
 const $ = (id) => document.getElementById(id);
+
+let domains = [];
+let instances = [];
+let selectedDomain = null;
+let selectedInstance = null;
+let playMode = "qbf"; // qbf | hybrid | certificate
 let state = null;
-let catalog = [];
 
 function log(msg) {
   const el = $("log");
-  const t = new Date().toLocaleTimeString();
-  el.textContent = `[${t}] ${msg}\n` + el.textContent;
+  el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + el.textContent;
 }
 
 async function api(path, opts) {
@@ -15,47 +19,126 @@ async function api(path, opts) {
   return data;
 }
 
-async function loadList() {
-  const data = await api("/api/problems");
-  catalog = data.problems || [];
-  const sel = $("problem");
-  sel.innerHTML = "";
-  let lastGroup = null;
-  for (const p of catalog) {
-    if (p.group !== lastGroup) {
-      const og = document.createElement("optgroup");
-      og.label = p.group;
-      og.id = "g-" + p.group.replace(/\W+/g, "_");
-      sel.appendChild(og);
-      lastGroup = p.group;
-    }
-    const o = document.createElement("option");
-    o.value = JSON.stringify({ path: p.path, kind: p.kind, domain: p.domain });
-    o.textContent = p.label;
-    sel.lastChild.appendChild(o);
+const MODE_HINT = {
+  qbf: "QBF solver: QuBi checks / can guide Black. Best when QuBi is fast.",
+  hybrid:
+    "Hybrid: first moves from partial certificate (opening book), then QBF. Fast interactive play.",
+  certificate:
+    "Certificate: play against a precomputed winning strategy (CNF). Use Certificates domain.",
+};
+
+function setMode(mode) {
+  playMode = mode;
+  document.querySelectorAll("#modes .chip").forEach((b) => {
+    b.classList.toggle("active", b.dataset.mode === mode);
+  });
+  $("modeHint").textContent = MODE_HINT[mode] || "";
+  $("stMode").textContent = mode;
+  // auto-pick domain when switching to certificate
+  if (mode === "certificate") {
+    const cert = domains.find((d) => d.kind === "certificate");
+    if (cert) selectDomain(cert.id);
   }
-  log(`Loaded ${catalog.length} benchmarks`);
 }
 
-function selected() {
-  try {
-    return JSON.parse($("problem").value);
-  } catch {
-    return null;
+async function loadDomains() {
+  const data = await api("/api/domains");
+  domains = data.domains || [];
+  const box = $("domains");
+  box.innerHTML = "";
+  for (const d of domains) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip" + (selectedDomain === d.id ? " active" : "");
+    b.innerHTML = `${d.label} <span class="n">(${d.count})</span>`;
+    b.onclick = () => selectDomain(d.id);
+    box.appendChild(b);
   }
+  if (!selectedDomain && domains.length) {
+    // default first hex domain
+    const hex = domains.find((d) => d.kind === "hex") || domains[0];
+    await selectDomain(hex.id);
+  }
+}
+
+async function selectDomain(id) {
+  selectedDomain = id;
+  selectedInstance = null;
+  document.querySelectorAll("#domains .chip").forEach((b, i) => {
+    b.classList.toggle("active", domains[i] && domains[i].id === id);
+  });
+  // re-render chips properly
+  const box = $("domains");
+  box.innerHTML = "";
+  for (const d of domains) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip" + (d.id === id ? " active" : "");
+    b.innerHTML = `${d.label} <span class="n">(${d.count})</span>`;
+    b.onclick = () => selectDomain(d.id);
+    box.appendChild(b);
+  }
+
+  const data = await api("/api/problems?" + new URLSearchParams({ domain: id }));
+  instances = data.problems || [];
+  const list = $("instances");
+  list.innerHTML = "";
+  if (!instances.length) {
+    list.innerHTML = '<span class="hint">No instances</span>';
+    return;
+  }
+  for (const p of instances) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "inst";
+    b.dataset.path = p.path;
+    let badges = "";
+    if (p.has_partial) {
+      badges += `<span class="badge book">book×${p.partial_layers || 0}</span>`;
+      if (p.partial_status === "SAT")
+        badges += `<span class="badge sat">SAT</span>`;
+      else if (p.partial_status)
+        badges += `<span class="badge">${p.partial_status}</span>`;
+    }
+    if (p.qbf_status) {
+      const cls = p.qbf_status === "SAT" ? "sat" : "";
+      badges += `<span class="badge ${cls}">${p.qbf_status}${
+        p.qbf_seconds != null ? " " + p.qbf_seconds + "s" : ""
+      }</span>`;
+    }
+    b.innerHTML = `${p.label}${badges}`;
+    b.onclick = () => {
+      selectedInstance = p;
+      document.querySelectorAll(".inst").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      log(
+        `Selected ${p.label} (${p.kind}` +
+          (p.qbf_status ? `, QuBi ${p.qbf_status} in ${p.qbf_seconds}s` : "") +
+          ")"
+      );
+    };
+    list.appendChild(b);
+  }
+  // auto-select first or hein_04_3x3-05
+  const prefer =
+    instances.find((p) => p.label.includes("hein_04_3x3-05")) || instances[0];
+  const btn = [...list.querySelectorAll(".inst")].find(
+    (x) => x.dataset.path === prefer.path
+  );
+  if (btn) btn.click();
 }
 
 function render() {
   if (!state) return;
-  $("kind").textContent = state.kind || "—";
-  $("depth").textContent = state.depth_bound ?? "—";
-  $("moves").textContent = state.moves_played ?? "—";
-  $("tomove").textContent = state.finished ? "—" : state.to_move;
+  $("stMode").textContent = state.play_mode || playMode;
   $("status").textContent = state.finished
     ? state.winner
       ? `Over — ${state.winner}`
       : "Game over"
     : "Playing";
+  $("tomove").textContent = state.finished ? "—" : state.to_move;
+  $("depth").textContent = state.depth_bound ?? "—";
+  $("moves").textContent = state.moves_played ?? "—";
   $("msg").textContent = state.message || "";
 
   const table = $("board");
@@ -70,13 +153,12 @@ function render() {
     td.style.color = "var(--muted)";
     td.textContent =
       state.kind === "grid"
-        ? "No board UI for this grid encoding — use QBF buttons."
-        : "No cells";
+        ? "Grid instance — use “QBF: win from start?”"
+        : "No board";
     tr.appendChild(td);
     table.appendChild(tr);
     return;
   }
-
   const cols = [...new Set(positions.map((p) => p[0]))].sort();
   const rows = [
     ...new Set(positions.map((p) => parseInt(p.slice(1), 10))),
@@ -96,14 +178,15 @@ function render() {
         continue;
       }
       const v = cells[pos];
-      td.className = v === "B" || v === "black" ? "B" : v === "W" || v === "white" ? "W" : "open";
+      td.className =
+        v === "B" || v === "black" ? "B" : v === "W" || v === "white" ? "W" : "open";
       if (state.kind === "hex") td.classList.add("hex");
       if (start.has(pos)) td.classList.add("start");
       if (end.has(pos)) td.classList.add("end");
-      td.textContent = v === "open" ? "" : v[0].toUpperCase();
+      td.textContent = v === "open" || v === "-" ? "" : String(v)[0].toUpperCase();
       td.title = pos;
       if ((v === "open" || v === "-") && !state.finished) {
-        td.onclick = () => play(pos);
+        td.onclick = () => onCell(pos);
       }
       tr.appendChild(td);
     }
@@ -112,20 +195,43 @@ function render() {
 }
 
 async function loadGame() {
-  const s = selected();
-  if (!s) return;
-  const q = new URLSearchParams({ path: s.path, kind: s.kind || "hex" });
-  if (s.domain) q.set("domain", s.domain);
+  if (!selectedInstance) {
+    log("Pick an instance first");
+    return;
+  }
+  const p = selectedInstance;
+  let mode = playMode;
+  let kind = p.kind;
+  if (mode === "certificate" && p.kind !== "certificate") {
+    log("Certificate mode needs a Certificates domain instance");
+    return;
+  }
+  if (p.kind === "certificate") {
+    mode = "certificate";
+    kind = "certificate";
+  }
+  if (mode === "hybrid" && p.kind !== "hex") {
+    log("Hybrid mode is for Hex boards");
+    mode = "qbf";
+  }
+  const q = new URLSearchParams({
+    path: p.path,
+    kind,
+    mode,
+  });
+  if (p.domain) q.set("domain_file", p.domain);
   state = await api("/api/new?" + q);
-  log(`Loaded ${s.kind}: ${s.path}`);
-  if (s.kind === "certificate") {
-    $("opponent").value = "strategy";
-    log("Certificate game: click “AI move” for Black strategy, then click a cell for White.");
+  log(`Loaded [${mode}] ${p.label}`);
+  if (mode === "certificate") {
+    log("Click “AI / strategy move” for Black, then click a cell for White.");
+  }
+  if (mode === "hybrid" && !p.has_partial) {
+    log("No partial cert yet — hybrid will use short QBF. Generate with scripts/generate_partial_certs.py");
   }
   render();
 }
 
-async function play(pos) {
+async function onCell(pos) {
   if (!state) return;
   try {
     if (state.kind === "certificate") {
@@ -136,19 +242,24 @@ async function play(pos) {
       });
       log(`White → ${pos}`);
     } else {
-      const opp = $("opponent").value;
+      const opp =
+        playMode === "hybrid"
+          ? "hybrid"
+          : playMode === "qbf"
+            ? "qbf"
+            : "random";
       state = await api("/api/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session: state.session,
           position: pos,
-          opponent: opp === "strategy" ? "none" : opp,
+          opponent: opp,
         }),
       });
-      let msg = `Move → ${pos}`;
+      let msg = `You → ${pos}`;
       if (state.last_ai) {
-        msg += `; AI ${state.last_ai.color} → ${state.last_ai.position} (${state.last_ai.mode})`;
+        msg += ` · AI ${state.last_ai.color}→${state.last_ai.position} (${state.last_ai.mode})`;
       }
       log(msg);
     }
@@ -163,9 +274,11 @@ async function aiMove() {
   const mode =
     state.kind === "certificate"
       ? "strategy"
-      : $("opponent").value === "qbf"
-        ? "qbf"
-        : "random";
+      : playMode === "hybrid"
+        ? "hybrid"
+        : playMode === "qbf"
+          ? "qbf"
+          : "random";
   try {
     log(`AI (${mode})…`);
     state = await api("/api/ai", {
@@ -174,13 +287,13 @@ async function aiMove() {
       body: JSON.stringify({ session: state.session, mode }),
     });
     if (state.last_ai) {
-      log(`AI ${state.last_ai.color} → ${state.last_ai.position} (${state.last_ai.mode})`);
-    } else {
-      log("AI move done");
-    }
+      log(
+        `AI ${state.last_ai.color} → ${state.last_ai.position} (${state.last_ai.mode})`
+      );
+    } else log("AI done");
     render();
   } catch (e) {
-    log("AI error: " + e.message);
+    log("AI: " + e.message);
   }
 }
 
@@ -199,27 +312,32 @@ async function undo() {
   }
 }
 
-async function solve(midgame) {
+async function solve(mid) {
   if (!state) return;
-  log(midgame ? "QuBi mid-game…" : "QuBi from start…");
+  log(mid ? "QuBi mid-game…" : "QuBi from start…");
   try {
     const res = await api("/api/solve", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         session: state.session,
-        midgame: !!midgame,
+        midgame: !!mid,
         encoding: "pg",
+        timeout: 90,
       }),
     });
     log(
-      `QBF ${res.status} (${(res.seconds || 0).toFixed?.(2) ?? res.seconds}s) — ${res.meaning || res.detail || ""}`
+      `QBF ${res.status} (${Number(res.seconds || 0).toFixed(2)}s) — ${res.meaning || res.detail || ""}`
     );
   } catch (e) {
-    log("Solve error: " + e.message);
+    log("Solve: " + e.message);
   }
 }
 
+// wire UI
+document.querySelectorAll("#modes .chip").forEach((b) => {
+  b.onclick = () => setMode(b.dataset.mode);
+});
 $("btnLoad").onclick = () => loadGame().catch((e) => log(String(e)));
 $("btnReset").onclick = () => loadGame().catch((e) => log(String(e)));
 $("btnUndo").onclick = () => undo();
@@ -227,16 +345,5 @@ $("btnAi").onclick = () => aiMove();
 $("btnSolveInit").onclick = () => solve(false);
 $("btnSolveMid").onclick = () => solve(true);
 
-loadList()
-  .then(() => {
-    // prefer a small hex default
-    const sel = $("problem");
-    for (const o of sel.options) {
-      if (o.value.includes("hein_04_3x3-05")) {
-        o.selected = true;
-        break;
-      }
-    }
-    return loadGame();
-  })
-  .catch((e) => log(String(e)));
+setMode("hybrid");
+loadDomains().catch((e) => log(String(e)));
