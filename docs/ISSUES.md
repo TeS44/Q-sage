@@ -2,9 +2,7 @@
 
 Priority rule: **encoding output parity first**; solver correctness and polish later.
 
-Existing GitHub issues: [#1](https://github.com/TeS44/Q-sage/issues/1) parse, [#2](https://github.com/TeS44/Q-sage/issues/2) rewrite, [#3](https://github.com/TeS44/Q-sage/issues/3) UI.
-
-Suggested new issues below are numbered from **#4** for when they are opened on GitHub. Track status here until then.
+All items below are open on GitHub: [TeS44/Q-sage issues](https://github.com/TeS44/Q-sage/issues).
 
 ---
 
