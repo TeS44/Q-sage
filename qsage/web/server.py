@@ -197,10 +197,13 @@ class Handler(BaseHTTPRequestHandler):
                 elif sess["play_mode"] == "random":
                     sess["message"] = "You are White · opponent Black (random)."
                 _SESSIONS[sess["session"]] = sess
-                # Black (AI) always opens on Hex when playing vs engine — do it
-                # server-side so the human's first click cannot place Black.
+                # If this instance has Black to move first, QBF/AI opens as Black
+                # server-side so the human never paints the opening stone.
                 t_ai = 3.0
-                if sess["play_mode"] in ("qbf", "hybrid", "random"):
+                if (
+                    sess["play_mode"] in ("qbf", "hybrid", "random")
+                    and sess.get("to_move") == sess.get("ai_color", "B")
+                ):
                     try:
                         hex_session.maybe_play_ai(sess, timeout=t_ai)
                     except Exception:

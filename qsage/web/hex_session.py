@@ -24,6 +24,14 @@ def new_hex_session(rel_path: str) -> dict:
         cells[pos] = "B"
     for pos in game.white_initials:
         cells[pos] = "W"
+    # Who moves first from the instance file (#times / #blackturns)
+    times = list(game.times)
+    black_turns = list(game.black_turns)
+    if times and black_turns:
+        black_opens = times[0] in black_turns
+    else:
+        black_opens = True  # Hex default: Black first
+    first_color = "B" if black_opens else "W"
     return {
         "session": uuid.uuid4().hex,
         "kind": "hex",
@@ -32,11 +40,11 @@ def new_hex_session(rel_path: str) -> dict:
         "neighbours": {k: list(v) for k, v in game.neighbours.items()},
         "start_border": list(game.start_border),
         "end_border": list(game.end_border),
-        "black_turns": list(game.black_turns),
-        "times": list(game.times),
+        "black_turns": black_turns,
+        "times": times,
         "cells": cells,
         "history": [],
-        "to_move": "B",
+        "to_move": first_color,
         "finished": False,
         "winner": None,
         "depth_bound": game.depth,
@@ -47,6 +55,8 @@ def new_hex_session(rel_path: str) -> dict:
         "human_color": "W",
         "ai_color": "B",
         "play_mode": "qbf",
+        "black_opens": black_opens,
+        "first_color": first_color,
     }
 
 
@@ -62,6 +72,28 @@ def public_hex(sess: dict) -> dict:
         "none": "— (manual / both sides)",
     }.get(mode, mode)
     your_turn = (not sess["finished"]) and sess["to_move"] == human
+    last = sess.get("last_ai") or {}
+    last_pos = last.get("position")
+    last_mode = last.get("mode") or mode
+
+    if sess["finished"]:
+        turn_hint = f"Game over" + (f" — {sess['winner']}" if sess.get("winner") else "")
+    elif your_turn and last_pos and last.get("color") == "B":
+        turn_hint = (
+            f"QBF played Black at {last_pos} — your turn (White). Click an empty hex."
+        )
+    elif your_turn:
+        turn_hint = "Your turn — play as White. Click an empty hex."
+    else:
+        turn_hint = f"Opponent’s turn — Black ({opp_name}) is moving…"
+
+    msg = sess.get("message")
+    if your_turn and last_pos and last.get("color") == "B":
+        msg = (
+            f"Black opened at {last_pos} via {last_mode}. "
+            f"You are White — it is your turn."
+        )
+
     return {
         "session": sess["session"],
         "kind": "hex",
@@ -73,7 +105,7 @@ def public_hex(sess: dict) -> dict:
         "depth_bound": sess["depth_bound"],
         "moves_played": sess["moves_played"],
         "last_ai": sess.get("last_ai"),
-        "message": sess.get("message"),
+        "message": msg,
         "positions": list(sess["positions"]),
         "start_border": list(sess.get("start_border") or []),
         "end_border": list(sess.get("end_border") or []),
@@ -84,14 +116,13 @@ def public_hex(sess: dict) -> dict:
         "opponent_is": labels.get(ai, ai),
         "opponent_engine": opp_name,
         "your_turn": your_turn,
-        "turn_hint": (
-            "Game over"
-            if sess["finished"]
-            else (
-                f"Your turn — play as {labels.get(human, human)}"
-                if your_turn
-                else f"Opponent’s turn — {labels.get(ai, ai)} ({opp_name})"
-            )
+        "turn_hint": turn_hint,
+        "black_opens": sess.get("black_opens", True),
+        "first_color": sess.get("first_color", "B"),
+        "opening_note": (
+            "Instance: Black moves first (from #blackturns)"
+            if sess.get("black_opens", True)
+            else "Instance: White moves first"
         ),
         "needs_ai_move": (
             not sess["finished"]

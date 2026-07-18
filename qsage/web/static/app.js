@@ -477,8 +477,10 @@ function updateColorBanner() {
       : "Game over";
   } else if (state.your_turn) {
     turn.className = "turn-line yours";
+    // Prefer server turn_hint (includes “QBF played Black at …”)
     turn.textContent =
-      state.turn_hint || `Your turn — click an empty cell to play as ${youAre}`;
+      state.turn_hint ||
+      `Your turn — click an empty cell to play as ${youAre}`;
   } else {
     turn.className = "turn-line theirs";
     turn.textContent =
@@ -553,13 +555,15 @@ async function loadGame() {
     // Server places Black's opening move before returning (vs AI modes)
     state = await api("/api/new?" + q);
     log(`Loaded [${mode}] ${p.label}`);
+    if (state.opening_note) log(state.opening_note);
     log(
       `You are ${state.you_are || "White"} · opponent ${state.opponent_is || "Black"} (${state.opponent_engine || mode})`
     );
-    if (state.last_ai) {
+    if (state.last_ai && state.last_ai.color === "B") {
       log(
-        `Black opened → ${state.last_ai.position} (${state.last_ai.mode}) · you play White`
+        `QBF/AI played Black first at ${state.last_ai.position} (${state.last_ai.mode})`
       );
+      log("→ Your turn now as White — click an empty hex");
     } else if (state.needs_ai_move && kind === "hex") {
       // Fallback if server could not open
       setBusy(true, "QuBi running — Black opens");
@@ -573,11 +577,15 @@ async function loadGame() {
         }),
       });
       if (state.last_ai) {
-        log(`Black opened → ${state.last_ai.position} · you play White`);
+        log(
+          `QBF/AI played Black first at ${state.last_ai.position}`
+        );
+        log("→ Your turn now as White — click an empty hex");
       }
-    }
-    if (state.your_turn) {
-      log("Your turn — click an empty hex to play as White");
+    } else if (state.your_turn && state.first_color === "W") {
+      log("This instance: White moves first — your turn");
+    } else if (state.your_turn) {
+      log("→ Your turn as White — click an empty hex");
     }
     if (mode === "certificate") {
       log("Certificate: AI / strategy for Black, then you play White.");
