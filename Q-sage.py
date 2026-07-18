@@ -17,9 +17,9 @@ import time
 
 import q_encodings.encoder as ge
 import run.run_solver as rs
-import utils.circuit_visualizer as cv
 import testing.tests as ts
 from parse.parser import Parse as ps
+# circuit_visualizer imports pyvis; load only when visualization is requested
 
 # Main:
 if __name__ == '__main__':
@@ -164,8 +164,9 @@ if __name__ == '__main__':
   if (args.debug > -1):
     print("Encoding time: " + str(encoding_time))
   # ----------------------------------------------------------------------------------------------------
-  # we visualize the circuit:
+  # we visualize the circuit (pyvis only needed here):
   if (args.qcir_viz == 1):
+    import utils.circuit_visualizer as cv
     cv.circuit_viz(encoding)
 
   # ----------------------------------------------------------------------------------------------------
