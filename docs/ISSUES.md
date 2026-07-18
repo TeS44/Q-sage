@@ -15,11 +15,11 @@ All items below are open on GitHub: [TeS44/Q-sage issues](https://github.com/TeS
 **Goldens:** `Benchmarks/SAT2023_GDDL/QBF_instances/{httt,B,BSP,C4,D,EP,EP-dual,hex}/*_bwnib.qcir`
 
 **Done when:**
-- `qsage encode --encoding bwnib …` produces QCIR that matches goldens under a documented **normalize** function (strip comments/blank lines; keep gate structure comparable).
-- Fast pytest suite over all `*_bwnib.qcir` (no solver).
-- Code stays small and readable for students.
+- [x] `qsage encode --encoding bwnib …` matches goldens under **normalize**
+- [x] Fast pytest suite over all `*_bwnib.qcir` (no solver) — **103 passed**
+- [x] Small student-facing API (`qsage/encode/bwnib.py`); body still calls legacy for stability
 
-**Note:** Prefer goldens on disk over re-running legacy `Q-sage.py` (legacy currently hard-imports `pyvis` even when not visualizing — see #11).
+**Status:** Working on `main`. Rewrite pure bwnib later without changing tests.
 
 **Parent:** #2
 
@@ -30,9 +30,10 @@ All items below are open on GitHub: [TeS44/Q-sage issues](https://github.com/TeS
 **Why:** Hot path must not write/read temp files; Bloqqer/CAQE need QDIMACS.
 
 **Done when:**
-- Circuit built in memory (`to_qcir()`, `to_qdimacs()`).
-- QDIMACS path is pure Python (port of `utils/qcir_to_qdimacs_transformer.py`), optional write to disk.
-- Normalization helper shared with #4 tests.
+- [x] QCIR string in process (`encoding_to_qcir` / `encode_bwnib` return value)
+- [x] Pure-Python `qcir_to_qdimacs` (first cut; tighten vs legacy transformer later)
+- [x] Shared `normalize_qcir` for #4 tests
+- [ ] Drop leftover write of `intermediate_files/combined_input.ig` when native parse/encode lands
 
 **Parent:** #2 · **Blocks:** #8 solvers
 
