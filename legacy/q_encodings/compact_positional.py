@@ -82,10 +82,15 @@ class CompactPositonal:
       print("Move variables: ",self.move_variables)
 
 
-    # Allocating path variables for the goal,
-    # For now assuming the empty board:
+    # Allocating path variables for the goal.
+    # Path may use black *initial* stones as well as black moves (non-empty boards).
     self.witness_variables = []
-    self.safe_max_path_length = int((self.parsed.depth + 1)/2)
+    self.safe_max_path_length = len(self.parsed.black_initial_positions) + int(
+        (self.parsed.depth + 1) / 2
+    )
+    # need at least 2 path slots for neighbour chaining
+    if self.safe_max_path_length < 2:
+      self.safe_max_path_length = 2
 
     for i in range(self.safe_max_path_length):
       self.witness_variables.append(self.encoding_variables.get_vars(self.num_move_variables))
@@ -128,20 +133,40 @@ class CompactPositonal:
               self.step_output_gates.append(-self.gates_generator.output_gate)
 
 
-    # Positions in the witness must be among the black moves:
-
-    # Iterating through each witness position:
-    self.encoding.append(['# Witness positions can only have the black moves : '])
+    # Witness positions must be black stones: either a black move or a black initial.
+    self.encoding.append(
+        ['# Witness positions among black moves or black initials : ']
+    )
     for i in range(self.safe_max_path_length):
       step_disjunction_output_gates = []
-      # Iterating through the black moves:
       for j in range(self.parsed.depth):
-        if (j%2 == 0):
-          self.gates_generator.complete_equality_gate(self.witness_variables[i], self.move_variables[j])
+        if (j % 2 == 0):
+          self.gates_generator.complete_equality_gate(
+              self.witness_variables[i], self.move_variables[j]
+          )
           step_disjunction_output_gates.append(self.gates_generator.output_gate)
-      # One of the equality must be true:
+      # Black initial positions are already occupied by Black:
+      for pos in self.parsed.black_initial_positions:
+        binary_format_clause = self.generate_binary_format(
+            self.witness_variables[i], pos
+        )
+        self.gates_generator.and_gate(binary_format_clause)
+        step_disjunction_output_gates.append(self.gates_generator.output_gate)
+      # One of the equalities / initials must hold:
       self.gates_generator.or_gate(step_disjunction_output_gates)
       self.step_output_gates.append(self.gates_generator.output_gate)
+
+    # Black moves must not land on white initial stones:
+    if len(self.parsed.white_initial_positions) != 0:
+      self.encoding.append(['# Black does not play on white initials : '])
+      for i in range(self.parsed.depth):
+        if (i % 2 == 0):
+          for pos in self.parsed.white_initial_positions:
+            binary_format_clause = self.generate_binary_format(
+                self.move_variables[i], pos
+            )
+            self.gates_generator.and_gate(binary_format_clause)
+            self.step_output_gates.append(-self.gates_generator.output_gate)
 
     # The witness must make a path:
     if (self.parsed.args.tight_neighbour_pruning == 0):

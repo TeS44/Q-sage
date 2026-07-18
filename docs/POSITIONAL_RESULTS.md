@@ -34,9 +34,11 @@ Representative results (depth from filename `-DD`; **pg** / **ibign** agree on s
 | hein_12_4x4-05 | 5 | UNSAT | UNSAT | UNSAT |
 | hein_12_4x4-07 | 7 | **SAT** | **SAT** | UNSAT* |
 
-\* `cp` is a different encoding family; solver answers need not match `pg`/`ibign` on every instance (paper compares families separately).
+**Paper (arXiv:2301.07345 §3):** every encoding is True **iff** Black has a bounded-depth winning strategy — so **pg, cp, and ibign must agree** on SAT/UNSAT for the same `.pg` + depth.
 
-**Paper-aligned pattern** for Hein win puzzles: no win at smaller depth (UNSAT), win at the critical depth in the filename (SAT) under LN-style encodings (`pg` / `ibign`).
+A bug in legacy `cp` (stateless compact) ignored **black initial stones** in the witness path (comment said “assuming empty board”). That made some wins look UNSAT. Fixed in `legacy/q_encodings/compact_positional.py` so path length and witness membership include black initials (aligned with `path_based_goal` / `pg`).
+
+**Paper-aligned pattern** for Hein win puzzles: no win at smaller depth (UNSAT), win at the critical depth in the filename (SAT) for **all** of `pg` / `cp` / `ibign`.
 
 ## CLI
 
