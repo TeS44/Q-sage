@@ -92,8 +92,8 @@
     #colorBanner .turn-line.yours { color: #86efac; font-weight: 600; }
     #colorBanner .turn-line.theirs { color: #fcd34d; font-weight: 600; }
     #colorBanner .turn-line.over { color: var(--muted); }
-    /* Square / grid boards (certificate, non-hex) */
-    #board { border-collapse: collapse; user-select: none; margin: 0 auto; }
+    /* Square boards (fallback / certificate) */
+    #board { border-collapse: collapse; user-select: none; margin: 0 auto; display: none; }
     #board td {
       width: 42px; height: 42px; text-align: center; vertical-align: middle;
       border: 1px solid var(--border); font-weight: 700; background: #243044; color: var(--muted);
@@ -102,6 +102,26 @@
     #board td.open:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
     #board td.B { background: #111; color: #fff; }
     #board td.W { background: #e8e8e8; color: #111; }
+
+    /* Little-Golem-style square grid (SVG) */
+    #gridSvg { display: none; max-width: 100%; height: auto; user-select: none; }
+    #gridSvg .wood { fill: #c4a574; stroke: #8b6914; stroke-width: 2; }
+    #gridSvg .grid-line { stroke: #5c4a32; stroke-width: 1.2; opacity: 0.85; }
+    #gridSvg .point { fill: #3d3220; }
+    #gridSvg .cell-hit { fill: transparent; cursor: pointer; }
+    #gridSvg .cell-hit:hover { fill: rgba(61,139,253,0.18); }
+    #gridSvg .stone-B { fill: #1a1a1a; stroke: #444; stroke-width: 1.5; }
+    #gridSvg .stone-W { fill: #faf8f5; stroke: #3d8bfd; stroke-width: 2.5; }
+    #gridSvg .stone-label {
+      font-size: 12px; font-weight: 700; text-anchor: middle;
+      dominant-baseline: central; pointer-events: none; font-family: system-ui, sans-serif;
+    }
+    #gridSvg .stone-label.onB { fill: #ccc; }
+    #gridSvg .stone-label.onW { fill: #1a1a1a; }
+    #gridSvg .coord {
+      font-size: 11px; fill: #8b9bb4; text-anchor: middle;
+      dominant-baseline: central; font-family: system-ui, sans-serif;
+    }
 
     /* Little-Golem-style Hex (SVG) */
     #board-wrap {
@@ -276,6 +296,7 @@
         <div id="boardOverlay" aria-hidden="true"><div class="spinner-lg"></div></div>
         <table id="board"></table>
         <svg id="hexSvg" style="display:none" xmlns="http://www.w3.org/2000/svg"></svg>
+        <svg id="gridSvg" style="display:none" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
       <p class="hint" id="hexLegend" style="display:none">
         <strong style="color:#eee">Black</strong> connects the <strong>dark</strong> borders

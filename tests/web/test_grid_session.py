@@ -76,3 +76,29 @@ def test_grid_qbf_solve_fast() -> None:
     assert r["status"] in ("SAT", "UNSAT", "TIMEOUT")
     # this instance is known SAT under 3s
     assert r["status"] == "SAT", r
+
+
+@pytest.mark.skipif(
+    not (REPO / HTTT / "3x3_3_domino.ig").is_file(), reason="benchmark missing"
+)
+def test_qbf_ai_places_black_and_keeps_turn_order() -> None:
+    """External QuBi-guided AI should place Black and leave White to move."""
+    from qsage.web.grid_session import maybe_play_ai_grid
+    from qsage.solve.qubi import qubi_available
+
+    if not qubi_available():
+        pytest.skip("QuBi missing")
+    s = new_grid_session(
+        f"{HTTT}/3x3_3_domino.ig",
+        f"{HTTT}/domain.ig",
+    )
+    s["play_mode"] = "qbf"
+    assert s["to_move"] == "B"
+    pos = maybe_play_ai_grid(s, timeout=2.0)
+    assert pos is not None
+    assert s["cells"][pos] == "B"
+    assert s["to_move"] == "W"
+    assert s["last_ai"]["mode"] in ("qbf", "random")
+    pub = public_grid(s)
+    assert pub["your_turn"] is True
+    assert pub["you_are"] == "White"

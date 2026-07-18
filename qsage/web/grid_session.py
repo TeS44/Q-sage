@@ -277,18 +277,120 @@ def random_grid_move(sess: dict, color: str | None = None) -> str | None:
     return pos
 
 
+def _write_midgame_ig(sess: dict, out: Path) -> None:
+    """Write a BDDL problem reflecting the current board + remaining depth."""
+    problem = parse_problem(_REPO / sess["path"])
+    remaining = max(1, int(sess["depth_bound"]) - int(sess["moves_played"]))
+    # Who moves first in residual
+    black_turn = "first" if sess["to_move"] == "B" else "second"
+
+    lines = [
+        "#boardsize",
+        f"{sess['width']} {sess['height']}",
+        "#init",
+    ]
+    for lab, v in sorted(sess["cells"].items()):
+        if v == "B":
+            x, y = _label_to_xy(lab)
+            lines.append(f"black({x},{y})")
+        elif v == "W":
+            x, y = _label_to_xy(lab)
+            lines.append(f"white({x},{y})")
+    lines += ["#depth", str(remaining), "#blackgoal"]
+    # goals as printed atoms from parsed problem
+    for shape in problem.black_goals:
+        if not shape:
+            lines.append("False")
+            continue
+        parts = []
+        for atom in shape:
+            body = f"{atom.predicate.value}({atom.x},{atom.y})"
+            parts.append(f"NOT({body})" if atom.negated else body)
+        lines.append(" ".join(parts) if parts else "False")
+    if not problem.black_goals:
+        lines.append("False")
+    lines.append("#whitegoal")
+    for shape in problem.white_goals:
+        if not shape:
+            continue
+        parts = []
+        for atom in shape:
+            body = f"{atom.predicate.value}({atom.x},{atom.y})"
+            parts.append(f"NOT({body})" if atom.negated else body)
+        if parts:
+            lines.append(" ".join(parts))
+    lines += ["#blackturn", black_turn]
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _residual_status(sess: dict, timeout: float) -> str:
+    """SAT/UNSAT/TIMEOUT/ERROR for current position via bwnib+QuBi."""
+    import tempfile
+
+    from qsage.encode.bwnib import encode_bwnib
+    from qsage.solve.qubi import qubi_available, solve_qcir_qubi
+
+    if not qubi_available():
+        return "ERROR"
+    with tempfile.TemporaryDirectory(prefix="qsage_grid_mid_") as td:
+        mid = Path(td) / "mid.ig"
+        _write_midgame_ig(sess, mid)
+        try:
+            qcir = encode_bwnib(_REPO / sess["domain"], mid)
+            res = solve_qcir_qubi(qcir, timeout=float(timeout))
+            return res.status.value
+        except Exception:
+            return "ERROR"
+
+
 def maybe_play_ai_grid(sess: dict, *, timeout: float = 2.0) -> str | None:
-    """Black AI: try QBF one-ply if cheap, else random."""
+    """
+    Black AI using external QuBi for correctness when possible.
+
+    One-ply search: try legal Black moves; prefer a move whose residual
+    position is still SAT (Black still has a winning strategy). Falls back
+    to random if QuBi times out or no SAT move is found.
+    """
     if sess["finished"] or sess["to_move"] != "B":
         return None
     mode = sess.get("play_mode") or "qbf"
     if mode == "random":
         return random_grid_move(sess, "B")
 
-    # QBF-guided: try each legal Black move, keep first where residual still "interesting"
-    # Full mid-game bwnib re-encode is expensive; use random for speed, optional QBF solve later.
-    # Prefer random among legal for interactive feel; optional short QBF on full original only.
-    return random_grid_move(sess, "B")
+    legal = legal_cells_for(sess, "B")
+    if not legal:
+        return None
+
+    # Budget: few candidates so UI stays interactive
+    timeout = float(timeout)
+    budget = min(len(legal), max(2, int(6.0 / max(timeout, 0.5))))
+    candidates = legal[:]
+    random.shuffle(candidates)
+    candidates = candidates[:budget]
+
+    sat_move: str | None = None
+    for pos in candidates:
+        apply_grid_move(sess, pos, "B")
+        # After Black move it is White's turn — residual with white to move
+        st = _residual_status(sess, timeout=timeout)
+        # undo
+        undo_grid(sess)
+        if st == "SAT":
+            sat_move = pos
+            break
+
+    if sat_move is None:
+        # no proven SAT move in budget — random legal
+        return random_grid_move(sess, "B")
+
+    painted = apply_grid_move(sess, sat_move, "B")
+    sess["last_ai"] = {
+        "color": "B",
+        "position": sat_move,
+        "cells": painted,
+        "mode": "qbf",
+    }
+    return sat_move
 
 
 def undo_grid(sess: dict) -> None:

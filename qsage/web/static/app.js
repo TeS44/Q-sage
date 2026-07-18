@@ -186,6 +186,11 @@ function renderHexSvg(cells) {
   const svg = $("hexSvg");
   const legend = $("hexLegend");
   if (table) table.style.display = "none";
+  const gridSvgHide = $("gridSvg");
+  if (gridSvgHide) {
+    gridSvgHide.style.display = "none";
+    while (gridSvgHide.firstChild) gridSvgHide.removeChild(gridSvgHide.firstChild);
+  }
   if (svg) svg.style.display = "block";
   if (legend) legend.style.display = "block";
 
@@ -482,14 +487,159 @@ function findBlackPath(cells, st) {
   return path;
 }
 
-function renderSquareBoard(cells) {
+/**
+ * Little-Golem-style square grid: wooden board, grid lines, stones on cells.
+ */
+function renderGridSvg(cells) {
   const table = $("board");
-  const svg = $("hexSvg");
+  const hexSvg = $("hexSvg");
+  const gridSvg = $("gridSvg");
+  const legend = $("hexLegend");
+  if (table) table.style.display = "none";
+  if (hexSvg) {
+    hexSvg.style.display = "none";
+    while (hexSvg.firstChild) hexSvg.removeChild(hexSvg.firstChild);
+  }
+  if (legend) legend.style.display = "none";
+  if (!gridSvg) return;
+  gridSvg.style.display = "block";
+  while (gridSvg.firstChild) gridSvg.removeChild(gridSvg.firstChild);
+
+  const w = state.board_w || state.width || 3;
+  const h = state.board_h || state.height || 3;
+  const cell = w <= 4 ? 48 : w <= 6 ? 40 : 32;
+  const pad = 28;
+  const boardW = w * cell;
+  const boardH = h * cell;
+  const NS = "http://www.w3.org/2000/svg";
+
+  gridSvg.setAttribute(
+    "viewBox",
+    `0 0 ${boardW + pad * 2} ${boardH + pad * 2}`
+  );
+  gridSvg.setAttribute("width", String(Math.min(420, boardW + pad * 2)));
+  gridSvg.setAttribute("height", String(Math.min(420, boardH + pad * 2)));
+
+  // wood panel
+  const wood = document.createElementNS(NS, "rect");
+  wood.setAttribute("x", pad - 6);
+  wood.setAttribute("y", pad - 6);
+  wood.setAttribute("width", boardW + 12);
+  wood.setAttribute("height", boardH + 12);
+  wood.setAttribute("rx", "8");
+  wood.setAttribute("class", "wood");
+  gridSvg.appendChild(wood);
+
+  // grid lines (cell boundaries)
+  for (let i = 0; i <= w; i++) {
+    const line = document.createElementNS(NS, "line");
+    line.setAttribute("x1", pad + i * cell);
+    line.setAttribute("y1", pad);
+    line.setAttribute("x2", pad + i * cell);
+    line.setAttribute("y2", pad + boardH);
+    line.setAttribute("class", "grid-line");
+    gridSvg.appendChild(line);
+  }
+  for (let j = 0; j <= h; j++) {
+    const line = document.createElementNS(NS, "line");
+    line.setAttribute("x1", pad);
+    line.setAttribute("y1", pad + j * cell);
+    line.setAttribute("x2", pad + boardW);
+    line.setAttribute("y2", pad + j * cell);
+    line.setAttribute("class", "grid-line");
+    gridSvg.appendChild(line);
+  }
+
+  // cells: x=1..w left→right, y=1..h bottom→top (chess-like)
+  for (let x = 1; x <= w; x++) {
+    for (let y = 1; y <= h; y++) {
+      const lab = String.fromCharCode(96 + x) + y;
+      const v = cells[lab] || "open";
+      // SVG y grows down; put y=1 at bottom
+      const cx = pad + (x - 0.5) * cell;
+      const cy = pad + (h - y + 0.5) * cell;
+
+      // hit target
+      const hit = document.createElementNS(NS, "rect");
+      hit.setAttribute("x", pad + (x - 1) * cell);
+      hit.setAttribute("y", pad + (h - y) * cell);
+      hit.setAttribute("width", cell);
+      hit.setAttribute("height", cell);
+      hit.setAttribute("class", "cell-hit");
+      hit.dataset.pos = lab;
+      hit.setAttribute("title", lab);
+      const canClick =
+        (v === "open" || v === "-") &&
+        !state.finished &&
+        !busy &&
+        state.your_turn !== false;
+      if (canClick) {
+        hit.style.cursor = "pointer";
+        hit.addEventListener("click", () => onCell(lab));
+      } else if (busy) {
+        hit.style.cursor = "wait";
+      } else {
+        hit.style.cursor = "default";
+        hit.style.pointerEvents = "none";
+      }
+      gridSvg.appendChild(hit);
+
+      if (v === "B" || v === "black" || v === "W" || v === "white") {
+        const isB = v === "B" || v === "black";
+        const circ = document.createElementNS(NS, "circle");
+        circ.setAttribute("cx", cx);
+        circ.setAttribute("cy", cy);
+        circ.setAttribute("r", cell * 0.36);
+        circ.setAttribute("class", isB ? "stone-B" : "stone-W");
+        circ.style.pointerEvents = "none";
+        gridSvg.appendChild(circ);
+        const mark = document.createElementNS(NS, "text");
+        mark.setAttribute("x", cx);
+        mark.setAttribute("y", cy);
+        mark.setAttribute("class", "stone-label " + (isB ? "onB" : "onW"));
+        mark.textContent = isB ? "B" : "W";
+        gridSvg.appendChild(mark);
+      }
+    }
+  }
+
+  // coordinates
+  for (let x = 1; x <= w; x++) {
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("x", pad + (x - 0.5) * cell);
+    t.setAttribute("y", pad + boardH + 16);
+    t.setAttribute("class", "coord");
+    t.textContent = String.fromCharCode(96 + x);
+    gridSvg.appendChild(t);
+  }
+  for (let y = 1; y <= h; y++) {
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("x", pad - 12);
+    t.setAttribute("y", pad + (h - y + 0.5) * cell);
+    t.setAttribute("class", "coord");
+    t.textContent = String(y);
+    gridSvg.appendChild(t);
+  }
+}
+
+function renderSquareBoard(cells) {
+  // Prefer Little-Golem SVG grid when we have board dimensions
+  if (state && (state.board_w || state.width) && Object.keys(cells).length) {
+    renderGridSvg(cells);
+    return;
+  }
+  const table = $("board");
+  const hexSvg = $("hexSvg");
+  const gridSvg = $("gridSvg");
   const legend = $("hexLegend");
   if (table) table.style.display = "table";
-  if (svg) {
-    svg.style.display = "none";
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
+  if (hexSvg) {
+    hexSvg.style.display = "none";
+    while (hexSvg.firstChild) hexSvg.removeChild(hexSvg.firstChild);
+  }
+  if (gridSvg) {
+    gridSvg.style.display = "none";
+    while (gridSvg.firstChild) gridSvg.removeChild(gridSvg.firstChild);
   }
   if (legend) legend.style.display = "none";
 
@@ -506,7 +656,6 @@ function renderSquareBoard(cells) {
     table.appendChild(tr);
     return;
   }
-  // Prefer explicit board size from grid session
   let cols, rows;
   if (state.board_w && state.board_h) {
     cols = [];
@@ -519,20 +668,9 @@ function renderSquareBoard(cells) {
       ...new Set(positions.map((p) => parseInt(p.slice(1), 10))),
     ].sort((a, b) => a - b);
   }
-  // Display row 1 at bottom (like chess) for grids: reverse row order visually
   const rowOrder = [...rows].reverse();
-
   for (const r of rowOrder) {
     const tr = document.createElement("tr");
-    // row label
-    const lab = document.createElement("td");
-    lab.textContent = String(r);
-    lab.style.border = "none";
-    lab.style.background = "transparent";
-    lab.style.color = "var(--muted)";
-    lab.style.width = "1.2rem";
-    lab.style.fontSize = "0.75rem";
-    tr.appendChild(lab);
     for (const c of cols) {
       const pos = c + r;
       const td = document.createElement("td");
@@ -550,38 +688,20 @@ function renderSquareBoard(cells) {
           ? ""
           : v === "B" || v === "black"
             ? "B"
-            : v === "W" || v === "white"
-              ? "W"
-              : String(v)[0].toUpperCase();
+            : "W";
       td.title = pos;
-      const canClick =
+      if (
         (v === "open" || v === "-") &&
         !state.finished &&
         !busy &&
-        state.your_turn !== false;
-      if (canClick) {
+        state.your_turn !== false
+      ) {
         td.onclick = () => onCell(pos);
-        td.style.cursor = "pointer";
-      } else if (busy && (v === "open" || v === "-")) {
-        td.style.cursor = "wait";
       }
       tr.appendChild(td);
     }
     table.appendChild(tr);
   }
-  // column letters footer
-  const foot = document.createElement("tr");
-  foot.appendChild(document.createElement("td")).style.border = "none";
-  for (const c of cols) {
-    const td = document.createElement("td");
-    td.textContent = c;
-    td.style.border = "none";
-    td.style.background = "transparent";
-    td.style.color = "var(--muted)";
-    td.style.fontSize = "0.75rem";
-    foot.appendChild(td);
-  }
-  table.appendChild(foot);
 }
 
 function updateColorBanner() {
