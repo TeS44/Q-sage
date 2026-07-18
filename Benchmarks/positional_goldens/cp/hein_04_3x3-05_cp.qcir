@@ -1,0 +1,295 @@
+# Move variables: 
+exists(1, 2, 3, 4)
+forall(5, 6, 7, 8)
+exists(9, 10, 11, 12)
+forall(13, 14, 15, 16)
+exists(17, 18, 19, 20)
+# witness variables: 
+exists(21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32)
+output(257)
+# Black does not overwrite the white moves : 
+33 = or(-9, 5)
+34 = or(-5, 9)
+35 = and(33, 34)
+36 = or(-10, 6)
+37 = or(-6, 10)
+38 = and(36, 37)
+39 = or(-11, 7)
+40 = or(-7, 11)
+41 = and(39, 40)
+42 = or(-12, 8)
+43 = or(-8, 12)
+44 = and(42, 43)
+45 = and(35, 38, 41, 44)
+46 = or(-17, 5)
+47 = or(-5, 17)
+48 = and(46, 47)
+49 = or(-18, 6)
+50 = or(-6, 18)
+51 = and(49, 50)
+52 = or(-19, 7)
+53 = or(-7, 19)
+54 = and(52, 53)
+55 = or(-20, 8)
+56 = or(-8, 20)
+57 = and(55, 56)
+58 = and(48, 51, 54, 57)
+59 = or(-17, 13)
+60 = or(-13, 17)
+61 = and(59, 60)
+62 = or(-18, 14)
+63 = or(-14, 18)
+64 = and(62, 63)
+65 = or(-19, 15)
+66 = or(-15, 19)
+67 = and(65, 66)
+68 = or(-20, 16)
+69 = or(-16, 20)
+70 = and(68, 69)
+71 = and(61, 64, 67, 70)
+# Witness positions can only have the black moves : 
+72 = or(-21, 1)
+73 = or(-1, 21)
+74 = and(72, 73)
+75 = or(-22, 2)
+76 = or(-2, 22)
+77 = and(75, 76)
+78 = or(-23, 3)
+79 = or(-3, 23)
+80 = and(78, 79)
+81 = or(-24, 4)
+82 = or(-4, 24)
+83 = and(81, 82)
+84 = and(74, 77, 80, 83)
+85 = or(-21, 9)
+86 = or(-9, 21)
+87 = and(85, 86)
+88 = or(-22, 10)
+89 = or(-10, 22)
+90 = and(88, 89)
+91 = or(-23, 11)
+92 = or(-11, 23)
+93 = and(91, 92)
+94 = or(-24, 12)
+95 = or(-12, 24)
+96 = and(94, 95)
+97 = and(87, 90, 93, 96)
+98 = or(-21, 17)
+99 = or(-17, 21)
+100 = and(98, 99)
+101 = or(-22, 18)
+102 = or(-18, 22)
+103 = and(101, 102)
+104 = or(-23, 19)
+105 = or(-19, 23)
+106 = and(104, 105)
+107 = or(-24, 20)
+108 = or(-20, 24)
+109 = and(107, 108)
+110 = and(100, 103, 106, 109)
+111 = or(84, 97, 110)
+112 = or(-25, 1)
+113 = or(-1, 25)
+114 = and(112, 113)
+115 = or(-26, 2)
+116 = or(-2, 26)
+117 = and(115, 116)
+118 = or(-27, 3)
+119 = or(-3, 27)
+120 = and(118, 119)
+121 = or(-28, 4)
+122 = or(-4, 28)
+123 = and(121, 122)
+124 = and(114, 117, 120, 123)
+125 = or(-25, 9)
+126 = or(-9, 25)
+127 = and(125, 126)
+128 = or(-26, 10)
+129 = or(-10, 26)
+130 = and(128, 129)
+131 = or(-27, 11)
+132 = or(-11, 27)
+133 = and(131, 132)
+134 = or(-28, 12)
+135 = or(-12, 28)
+136 = and(134, 135)
+137 = and(127, 130, 133, 136)
+138 = or(-25, 17)
+139 = or(-17, 25)
+140 = and(138, 139)
+141 = or(-26, 18)
+142 = or(-18, 26)
+143 = and(141, 142)
+144 = or(-27, 19)
+145 = or(-19, 27)
+146 = and(144, 145)
+147 = or(-28, 20)
+148 = or(-20, 28)
+149 = and(147, 148)
+150 = and(140, 143, 146, 149)
+151 = or(124, 137, 150)
+152 = or(-29, 1)
+153 = or(-1, 29)
+154 = and(152, 153)
+155 = or(-30, 2)
+156 = or(-2, 30)
+157 = and(155, 156)
+158 = or(-31, 3)
+159 = or(-3, 31)
+160 = and(158, 159)
+161 = or(-32, 4)
+162 = or(-4, 32)
+163 = and(161, 162)
+164 = and(154, 157, 160, 163)
+165 = or(-29, 9)
+166 = or(-9, 29)
+167 = and(165, 166)
+168 = or(-30, 10)
+169 = or(-10, 30)
+170 = and(168, 169)
+171 = or(-31, 11)
+172 = or(-11, 31)
+173 = and(171, 172)
+174 = or(-32, 12)
+175 = or(-12, 32)
+176 = and(174, 175)
+177 = and(167, 170, 173, 176)
+178 = or(-29, 17)
+179 = or(-17, 29)
+180 = and(178, 179)
+181 = or(-30, 18)
+182 = or(-18, 30)
+183 = and(181, 182)
+184 = or(-31, 19)
+185 = or(-19, 31)
+186 = and(184, 185)
+187 = or(-32, 20)
+188 = or(-20, 32)
+189 = and(187, 188)
+190 = and(180, 183, 186, 189)
+191 = or(164, 177, 190)
+192 = and(-21, -22, -23, -24)
+193 = and(-21, -22, 23, 24)
+194 = and(-21, 22, 23, -24)
+# disjunction of all start boarder positions : 
+195 = or(192, 193, 194)
+# position clauses: 
+# neighbour clauses: 
+196 = and(-25, -26, 27, 28)
+197 = and(-25, -26, -27, 28)
+198 = or(196, 197)
+# if then clause : 
+199 = or(-192, 198)
+# position clauses: 
+200 = and(-21, -22, -23, 24)
+# neighbour clauses: 
+201 = and(-25, 26, -27, -28)
+202 = and(-25, -26, -27, -28)
+203 = and(-25, -26, 27, -28)
+204 = or(201, 202, 203, 196)
+# if then clause : 
+205 = or(-200, 204)
+# position clauses: 
+206 = and(-21, -22, 23, -24)
+# neighbour clauses: 
+# if then clause : 
+207 = or(-206, 203)
+# position clauses: 
+# neighbour clauses: 
+208 = and(-25, 26, 27, -28)
+209 = or(202, 208, 201, 197)
+# if then clause : 
+210 = or(-193, 209)
+# position clauses: 
+211 = and(-21, 22, -23, -24)
+# neighbour clauses: 
+212 = and(-25, 26, 27, 28)
+213 = and(-25, 26, -27, 28)
+214 = or(197, 212, 196, 213, 203, 208)
+# if then clause : 
+215 = or(-211, 214)
+# position clauses: 
+216 = and(-21, 22, -23, 24)
+# neighbour clauses: 
+# if then clause : 
+217 = or(-216, 213)
+# position clauses: 
+# neighbour clauses: 
+218 = or(196, 212, 201)
+# if then clause : 
+219 = or(-194, 218)
+# position clauses: 
+220 = and(-21, 22, 23, 24)
+# neighbour clauses: 
+221 = and(25, -26, -27, -28)
+222 = or(201, 208, 221, 213)
+# if then clause : 
+223 = or(-220, 222)
+# position clauses: 
+224 = and(21, -22, -23, -24)
+# neighbour clauses: 
+# if then clause : 
+225 = or(-224, 221)
+# position clauses: 
+# neighbour clauses: 
+226 = and(-29, -30, 31, 32)
+227 = and(-29, -30, -31, 32)
+228 = or(226, 227)
+# if then clause : 
+229 = or(-202, 228)
+# position clauses: 
+# neighbour clauses: 
+230 = and(-29, 30, -31, -32)
+231 = and(-29, -30, -31, -32)
+232 = and(-29, -30, 31, -32)
+233 = or(230, 231, 232, 226)
+# if then clause : 
+234 = or(-197, 233)
+# position clauses: 
+# neighbour clauses: 
+# if then clause : 
+235 = or(-203, 232)
+# position clauses: 
+# neighbour clauses: 
+236 = and(-29, 30, 31, -32)
+237 = or(231, 236, 230, 227)
+# if then clause : 
+238 = or(-196, 237)
+# position clauses: 
+# neighbour clauses: 
+239 = and(-29, 30, 31, 32)
+240 = and(-29, 30, -31, 32)
+241 = or(227, 239, 226, 240, 232, 236)
+# if then clause : 
+242 = or(-201, 241)
+# position clauses: 
+# neighbour clauses: 
+# if then clause : 
+243 = or(-213, 240)
+# position clauses: 
+# neighbour clauses: 
+244 = or(226, 239, 230)
+# if then clause : 
+245 = or(-208, 244)
+# position clauses: 
+# neighbour clauses: 
+246 = and(29, -30, -31, -32)
+247 = or(230, 236, 246, 240)
+# if then clause : 
+248 = or(-212, 247)
+# position clauses: 
+# neighbour clauses: 
+# if then clause : 
+249 = or(-221, 246)
+# End boarder clauses : 
+# disjunction of all end boarder positions : 
+250 = or(232, 240, 246)
+# Restricted black moves: 
+251 = and(1, -2, -3, -4)
+252 = or(-1, 251)
+253 = and(9, -10, -11, -12)
+254 = or(-9, 253)
+255 = and(17, -18, -19, -20)
+256 = or(-17, 255)
+# Final conjunction gate : 
+257 = and(-45, -58, -71, 111, 151, 191, 195, 199, 205, 207, 210, 215, 217, 219, 223, 225, 229, 234, 235, 238, 242, 243, 245, 248, 249, 250, 252, 254, 256)

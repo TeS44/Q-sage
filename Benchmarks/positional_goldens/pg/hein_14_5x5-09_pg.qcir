@@ -1,0 +1,830 @@
+# Move variables: 
+exists(1, 2, 3, 4, 5)
+forall(6, 7, 8, 9, 10)
+exists(11, 12, 13, 14, 15)
+forall(16, 17, 18, 19, 20)
+exists(21, 22, 23, 24, 25)
+forall(26, 27, 28, 29, 30)
+exists(31, 32, 33, 34, 35)
+forall(36, 37, 38, 39, 40)
+exists(41, 42, 43, 44, 45)
+# goal path variables: 
+exists(71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110)
+# Forall position variables: 
+forall(46, 47, 48, 49, 50)
+# Predicate variables: 
+exists(51, 52)
+exists(53, 54)
+exists(55, 56)
+exists(57, 58)
+exists(59, 60)
+exists(61, 62)
+exists(63, 64)
+exists(65, 66)
+exists(67, 68)
+exists(69, 70)
+# Exists neighbour variables: 
+exists(111, 112, 113, 114, 115)
+output(738)
+# ------------------------------------------------------------------------
+# Transitions: 
+# Player 1 (black) transition function for time step 0: 
+# Equality gate for move and forall positional variables:
+116 = or(-1, 46)
+117 = or(-46, 1)
+118 = and(116, 117)
+119 = or(-2, 47)
+120 = or(-47, 2)
+121 = and(119, 120)
+122 = or(-3, 48)
+123 = or(-48, 3)
+124 = and(122, 123)
+125 = or(-4, 49)
+126 = or(-49, 4)
+127 = and(125, 126)
+128 = or(-5, 50)
+129 = or(-50, 5)
+130 = and(128, 129)
+131 = and(118, 121, 124, 127, 130)
+# Choosing black position constraints:
+# In time step i, occupied must be false:
+# In time step i+1, occupied must be true and color must be black (i.e., 0):
+132 = and(-51, 53, -54)
+# If time and equality constraints hold then choosing black constraints must be true:
+133 = or(-131, 132)
+# propagation constraints:
+134 = or(-51, 53)
+135 = or(-53, 51)
+136 = and(134, 135)
+137 = or(-52, 54)
+138 = or(-54, 52)
+139 = and(137, 138)
+140 = and(136, 139)
+# If the time and equality constraints does not hold predicates are propagated:
+141 = or(131, 140)
+# Player 2 (white) transition function for time step 1: 
+# Equality gate for move and forall positional variables:
+142 = or(-6, 46)
+143 = or(-46, 6)
+144 = and(142, 143)
+145 = or(-7, 47)
+146 = or(-47, 7)
+147 = and(145, 146)
+148 = or(-8, 48)
+149 = or(-48, 8)
+150 = and(148, 149)
+151 = or(-9, 49)
+152 = or(-49, 9)
+153 = and(151, 152)
+154 = or(-10, 50)
+155 = or(-50, 10)
+156 = and(154, 155)
+157 = and(144, 147, 150, 153, 156)
+# In time step i, occupied must be false:
+158 = and(157, -53)
+# Choosing white position constraints:
+# In time step i+1, occupied must be true and color must be white (i.e., 1):
+159 = and(55, 56)
+# If time and equality constraints hold then choosing white constraints must be true:
+160 = or(-158, 159)
+# propagation constraints:
+161 = or(-53, 55)
+162 = or(-55, 53)
+163 = and(161, 162)
+164 = or(-54, 56)
+165 = or(-56, 54)
+166 = and(164, 165)
+167 = and(163, 166)
+# If the time and equality constraints does not hold predicates are propagated:
+168 = or(158, 167)
+# Player 1 (black) transition function for time step 2: 
+# Equality gate for move and forall positional variables:
+169 = or(-11, 46)
+170 = or(-46, 11)
+171 = and(169, 170)
+172 = or(-12, 47)
+173 = or(-47, 12)
+174 = and(172, 173)
+175 = or(-13, 48)
+176 = or(-48, 13)
+177 = and(175, 176)
+178 = or(-14, 49)
+179 = or(-49, 14)
+180 = and(178, 179)
+181 = or(-15, 50)
+182 = or(-50, 15)
+183 = and(181, 182)
+184 = and(171, 174, 177, 180, 183)
+# Choosing black position constraints:
+# In time step i, occupied must be false:
+# In time step i+1, occupied must be true and color must be black (i.e., 0):
+185 = and(-55, 57, -58)
+# If time and equality constraints hold then choosing black constraints must be true:
+186 = or(-184, 185)
+# propagation constraints:
+187 = or(-55, 57)
+188 = or(-57, 55)
+189 = and(187, 188)
+190 = or(-56, 58)
+191 = or(-58, 56)
+192 = and(190, 191)
+193 = and(189, 192)
+# If the time and equality constraints does not hold predicates are propagated:
+194 = or(184, 193)
+# Player 2 (white) transition function for time step 3: 
+# Equality gate for move and forall positional variables:
+195 = or(-16, 46)
+196 = or(-46, 16)
+197 = and(195, 196)
+198 = or(-17, 47)
+199 = or(-47, 17)
+200 = and(198, 199)
+201 = or(-18, 48)
+202 = or(-48, 18)
+203 = and(201, 202)
+204 = or(-19, 49)
+205 = or(-49, 19)
+206 = and(204, 205)
+207 = or(-20, 50)
+208 = or(-50, 20)
+209 = and(207, 208)
+210 = and(197, 200, 203, 206, 209)
+# In time step i, occupied must be false:
+211 = and(210, -57)
+# Choosing white position constraints:
+# In time step i+1, occupied must be true and color must be white (i.e., 1):
+212 = and(59, 60)
+# If time and equality constraints hold then choosing white constraints must be true:
+213 = or(-211, 212)
+# propagation constraints:
+214 = or(-57, 59)
+215 = or(-59, 57)
+216 = and(214, 215)
+217 = or(-58, 60)
+218 = or(-60, 58)
+219 = and(217, 218)
+220 = and(216, 219)
+# If the time and equality constraints does not hold predicates are propagated:
+221 = or(211, 220)
+# Player 1 (black) transition function for time step 4: 
+# Equality gate for move and forall positional variables:
+222 = or(-21, 46)
+223 = or(-46, 21)
+224 = and(222, 223)
+225 = or(-22, 47)
+226 = or(-47, 22)
+227 = and(225, 226)
+228 = or(-23, 48)
+229 = or(-48, 23)
+230 = and(228, 229)
+231 = or(-24, 49)
+232 = or(-49, 24)
+233 = and(231, 232)
+234 = or(-25, 50)
+235 = or(-50, 25)
+236 = and(234, 235)
+237 = and(224, 227, 230, 233, 236)
+# Choosing black position constraints:
+# In time step i, occupied must be false:
+# In time step i+1, occupied must be true and color must be black (i.e., 0):
+238 = and(-59, 61, -62)
+# If time and equality constraints hold then choosing black constraints must be true:
+239 = or(-237, 238)
+# propagation constraints:
+240 = or(-59, 61)
+241 = or(-61, 59)
+242 = and(240, 241)
+243 = or(-60, 62)
+244 = or(-62, 60)
+245 = and(243, 244)
+246 = and(242, 245)
+# If the time and equality constraints does not hold predicates are propagated:
+247 = or(237, 246)
+# Player 2 (white) transition function for time step 5: 
+# Equality gate for move and forall positional variables:
+248 = or(-26, 46)
+249 = or(-46, 26)
+250 = and(248, 249)
+251 = or(-27, 47)
+252 = or(-47, 27)
+253 = and(251, 252)
+254 = or(-28, 48)
+255 = or(-48, 28)
+256 = and(254, 255)
+257 = or(-29, 49)
+258 = or(-49, 29)
+259 = and(257, 258)
+260 = or(-30, 50)
+261 = or(-50, 30)
+262 = and(260, 261)
+263 = and(250, 253, 256, 259, 262)
+# In time step i, occupied must be false:
+264 = and(263, -61)
+# Choosing white position constraints:
+# In time step i+1, occupied must be true and color must be white (i.e., 1):
+265 = and(63, 64)
+# If time and equality constraints hold then choosing white constraints must be true:
+266 = or(-264, 265)
+# propagation constraints:
+267 = or(-61, 63)
+268 = or(-63, 61)
+269 = and(267, 268)
+270 = or(-62, 64)
+271 = or(-64, 62)
+272 = and(270, 271)
+273 = and(269, 272)
+# If the time and equality constraints does not hold predicates are propagated:
+274 = or(264, 273)
+# Player 1 (black) transition function for time step 6: 
+# Equality gate for move and forall positional variables:
+275 = or(-31, 46)
+276 = or(-46, 31)
+277 = and(275, 276)
+278 = or(-32, 47)
+279 = or(-47, 32)
+280 = and(278, 279)
+281 = or(-33, 48)
+282 = or(-48, 33)
+283 = and(281, 282)
+284 = or(-34, 49)
+285 = or(-49, 34)
+286 = and(284, 285)
+287 = or(-35, 50)
+288 = or(-50, 35)
+289 = and(287, 288)
+290 = and(277, 280, 283, 286, 289)
+# Choosing black position constraints:
+# In time step i, occupied must be false:
+# In time step i+1, occupied must be true and color must be black (i.e., 0):
+291 = and(-63, 65, -66)
+# If time and equality constraints hold then choosing black constraints must be true:
+292 = or(-290, 291)
+# propagation constraints:
+293 = or(-63, 65)
+294 = or(-65, 63)
+295 = and(293, 294)
+296 = or(-64, 66)
+297 = or(-66, 64)
+298 = and(296, 297)
+299 = and(295, 298)
+# If the time and equality constraints does not hold predicates are propagated:
+300 = or(290, 299)
+# Player 2 (white) transition function for time step 7: 
+# Equality gate for move and forall positional variables:
+301 = or(-36, 46)
+302 = or(-46, 36)
+303 = and(301, 302)
+304 = or(-37, 47)
+305 = or(-47, 37)
+306 = and(304, 305)
+307 = or(-38, 48)
+308 = or(-48, 38)
+309 = and(307, 308)
+310 = or(-39, 49)
+311 = or(-49, 39)
+312 = and(310, 311)
+313 = or(-40, 50)
+314 = or(-50, 40)
+315 = and(313, 314)
+316 = and(303, 306, 309, 312, 315)
+# In time step i, occupied must be false:
+317 = and(316, -65)
+# Choosing white position constraints:
+# In time step i+1, occupied must be true and color must be white (i.e., 1):
+318 = and(67, 68)
+# If time and equality constraints hold then choosing white constraints must be true:
+319 = or(-317, 318)
+# propagation constraints:
+320 = or(-65, 67)
+321 = or(-67, 65)
+322 = and(320, 321)
+323 = or(-66, 68)
+324 = or(-68, 66)
+325 = and(323, 324)
+326 = and(322, 325)
+# If the time and equality constraints does not hold predicates are propagated:
+327 = or(317, 326)
+# Player 1 (black) transition function for time step 8: 
+# Equality gate for move and forall positional variables:
+328 = or(-41, 46)
+329 = or(-46, 41)
+330 = and(328, 329)
+331 = or(-42, 47)
+332 = or(-47, 42)
+333 = and(331, 332)
+334 = or(-43, 48)
+335 = or(-48, 43)
+336 = and(334, 335)
+337 = or(-44, 49)
+338 = or(-49, 44)
+339 = and(337, 338)
+340 = or(-45, 50)
+341 = or(-50, 45)
+342 = and(340, 341)
+343 = and(330, 333, 336, 339, 342)
+# Choosing black position constraints:
+# In time step i, occupied must be false:
+# In time step i+1, occupied must be true and color must be black (i.e., 0):
+344 = and(-67, 69, -70)
+# If time and equality constraints hold then choosing black constraints must be true:
+345 = or(-343, 344)
+# propagation constraints:
+346 = or(-67, 69)
+347 = or(-69, 67)
+348 = and(346, 347)
+349 = or(-68, 70)
+350 = or(-70, 68)
+351 = and(349, 350)
+352 = and(348, 351)
+# If the time and equality constraints does not hold predicates are propagated:
+353 = or(343, 352)
+# Final transition gate: 
+354 = and(133, 141, 160, 168, 186, 194, 213, 221, 239, 247, 266, 274, 292, 300, 319, 327, 345, 353)
+# ------------------------------------------------------------------------
+# Initial state: 
+355 = and(-46, 47, 48, -49, 50)
+356 = and(46, -47, 48, 49, -50)
+357 = and(46, -47, 48, 49, 50)
+# Or for all black forall position clauses: 
+358 = or(355, 356, 357)
+# if black condition is true then first time step occupied and color black (i.e. 0): 
+359 = and(51, -52)
+360 = or(-358, 359)
+361 = and(-46, 47, -48, -49, -50)
+362 = and(46, -47, -48, 49, -50)
+363 = and(46, -47, 48, -49, -50)
+# Or for all white forall position clauses: 
+364 = or(361, 362, 363)
+# if white condition is true then first time step occupied and color white (i.e. 1): 
+365 = and(51, 52)
+366 = or(-364, 365)
+# for all other branches the occupied is 0: 
+367 = or(358, 364)
+368 = or(367, -51)
+369 = and(360, 366, 368)
+# ------------------------------------------------------------------------
+# Goal state: 
+# Specifying neighbours: 
+370 = and(-46, -47, -48, -49, -50)
+# neighbour clauses: 
+371 = and(-111, -112, 113, -114, 115)
+372 = and(-111, -112, -113, -114, 115)
+373 = or(371, 372)
+# if then clause : 
+374 = or(-370, 373)
+375 = and(-46, -47, -48, -49, 50)
+# neighbour clauses: 
+376 = and(-111, -112, 113, 114, -115)
+377 = and(-111, -112, -113, -114, -115)
+378 = and(-111, -112, -113, 114, -115)
+379 = or(376, 377, 378, 371)
+# if then clause : 
+380 = or(-375, 379)
+381 = and(-46, -47, -48, 49, -50)
+# neighbour clauses: 
+382 = and(-111, -112, 113, 114, 115)
+383 = and(-111, -112, -113, 114, 115)
+384 = or(382, 372, 383, 376)
+# if then clause : 
+385 = or(-381, 384)
+386 = and(-46, -47, -48, 49, 50)
+# neighbour clauses: 
+387 = and(-111, 112, -113, -114, -115)
+388 = and(-111, -112, 113, -114, -115)
+389 = or(387, 378, 388, 382)
+# if then clause : 
+390 = or(-386, 389)
+391 = and(-46, -47, 48, -49, -50)
+# neighbour clauses: 
+# if then clause : 
+392 = or(-391, 388)
+393 = and(-46, -47, 48, -49, 50)
+# neighbour clauses: 
+394 = and(-111, 112, -113, 114, -115)
+395 = or(377, 394, 376, 372)
+# if then clause : 
+396 = or(-393, 395)
+397 = and(-46, -47, 48, 49, -50)
+# neighbour clauses: 
+398 = and(-111, 112, -113, 114, 115)
+399 = or(372, 398, 371, 382, 378, 394)
+# if then clause : 
+400 = or(-397, 399)
+401 = and(-46, -47, 48, 49, 50)
+# neighbour clauses: 
+402 = and(-111, 112, 113, -114, -115)
+403 = or(378, 402, 376, 387, 383, 398)
+# if then clause : 
+404 = or(-401, 403)
+405 = and(-46, 47, -48, -49, 50)
+# neighbour clauses: 
+406 = and(-111, 112, -113, -114, 115)
+# if then clause : 
+407 = or(-405, 406)
+408 = and(-46, 47, -48, 49, -50)
+# neighbour clauses: 
+409 = and(-111, 112, 113, 114, 115)
+410 = or(371, 409, 398, 376)
+# if then clause : 
+411 = or(-408, 410)
+412 = and(-46, 47, -48, 49, 50)
+# neighbour clauses: 
+413 = and(111, -112, -113, -114, -115)
+414 = or(376, 413, 394, 402, 382, 409)
+# if then clause : 
+415 = or(-412, 414)
+416 = and(-46, 47, 48, -49, -50)
+# neighbour clauses: 
+417 = and(111, -112, -113, -114, 115)
+418 = and(-111, 112, 113, -114, 115)
+419 = or(382, 417, 398, 418, 387, 413)
+# if then clause : 
+420 = or(-416, 419)
+# neighbour clauses: 
+421 = and(111, -112, -113, 114, -115)
+422 = and(-111, 112, 113, 114, -115)
+423 = or(387, 421, 402, 422, 406, 417)
+# if then clause : 
+424 = or(-355, 423)
+425 = and(-46, 47, 48, 49, -50)
+# neighbour clauses: 
+# if then clause : 
+426 = or(-425, 422)
+427 = and(-46, 47, 48, 49, 50)
+# neighbour clauses: 
+428 = and(111, -112, 113, -114, -115)
+429 = or(394, 428, 413, 398)
+# if then clause : 
+430 = or(-427, 429)
+431 = and(46, -47, -48, -49, -50)
+# neighbour clauses: 
+432 = and(111, -112, 113, -114, 115)
+433 = or(398, 432, 409, 417, 402, 428)
+# if then clause : 
+434 = or(-431, 433)
+435 = and(46, -47, -48, -49, 50)
+# neighbour clauses: 
+436 = and(111, -112, 113, 114, -115)
+437 = or(402, 436, 413, 421, 418, 432)
+# if then clause : 
+438 = or(-435, 437)
+439 = and(46, -47, -48, 49, 50)
+# neighbour clauses: 
+440 = and(111, -112, -113, 114, 115)
+# if then clause : 
+441 = or(-439, 440)
+442 = and(46, -47, 48, -49, 50)
+# neighbour clauses: 
+443 = or(413, 428, 436, 417)
+# if then clause : 
+444 = or(-442, 443)
+# neighbour clauses: 
+445 = and(111, -112, 113, 114, 115)
+446 = or(417, 432, 445, 421)
+# if then clause : 
+447 = or(-356, 446)
+# neighbour clauses: 
+448 = and(111, 112, -113, -114, -115)
+449 = or(421, 436, 448, 440)
+# if then clause : 
+450 = or(-357, 449)
+451 = and(46, 47, -48, -49, -50)
+# neighbour clauses: 
+# if then clause : 
+452 = or(-451, 448)
+# Constratins for position 0 :
+# Equality clause for the current path variables and forall position variables: 
+453 = or(-71, 46)
+454 = or(-46, 71)
+455 = and(453, 454)
+456 = or(-72, 47)
+457 = or(-47, 72)
+458 = and(456, 457)
+459 = or(-73, 48)
+460 = or(-48, 73)
+461 = and(459, 460)
+462 = or(-74, 49)
+463 = or(-49, 74)
+464 = and(462, 463)
+465 = or(-75, 50)
+466 = or(-50, 75)
+467 = and(465, 466)
+468 = and(455, 458, 461, 464, 467)
+# Equality clause for the neighbour path variables and neighbour variables: 
+469 = or(-76, 111)
+470 = or(-111, 76)
+471 = and(469, 470)
+472 = or(-77, 112)
+473 = or(-112, 77)
+474 = and(472, 473)
+475 = or(-78, 113)
+476 = or(-113, 78)
+477 = and(475, 476)
+478 = or(-79, 114)
+479 = or(-114, 79)
+480 = and(478, 479)
+481 = or(-80, 115)
+482 = or(-115, 80)
+483 = and(481, 482)
+484 = and(471, 474, 477, 480, 483)
+485 = or(-468, 484)
+# The goal position is occupied and the color is black: 
+486 = and(69, -70)
+# if then clause : 
+487 = or(-468, 486)
+# Constratins for position 1 :
+# Equality clause for the current path variables and forall position variables: 
+488 = or(-76, 46)
+489 = or(-46, 76)
+490 = and(488, 489)
+491 = or(-77, 47)
+492 = or(-47, 77)
+493 = and(491, 492)
+494 = or(-78, 48)
+495 = or(-48, 78)
+496 = and(494, 495)
+497 = or(-79, 49)
+498 = or(-49, 79)
+499 = and(497, 498)
+500 = or(-80, 50)
+501 = or(-50, 80)
+502 = and(500, 501)
+503 = and(490, 493, 496, 499, 502)
+# Equality clause for the neighbour path variables and neighbour variables: 
+504 = or(-81, 111)
+505 = or(-111, 81)
+506 = and(504, 505)
+507 = or(-82, 112)
+508 = or(-112, 82)
+509 = and(507, 508)
+510 = or(-83, 113)
+511 = or(-113, 83)
+512 = and(510, 511)
+513 = or(-84, 114)
+514 = or(-114, 84)
+515 = and(513, 514)
+516 = or(-85, 115)
+517 = or(-115, 85)
+518 = and(516, 517)
+519 = and(506, 509, 512, 515, 518)
+520 = or(-503, 519)
+# The goal position is occupied and the color is black: 
+# if then clause : 
+521 = or(-503, 486)
+# Constratins for position 2 :
+# Equality clause for the current path variables and forall position variables: 
+522 = or(-81, 46)
+523 = or(-46, 81)
+524 = and(522, 523)
+525 = or(-82, 47)
+526 = or(-47, 82)
+527 = and(525, 526)
+528 = or(-83, 48)
+529 = or(-48, 83)
+530 = and(528, 529)
+531 = or(-84, 49)
+532 = or(-49, 84)
+533 = and(531, 532)
+534 = or(-85, 50)
+535 = or(-50, 85)
+536 = and(534, 535)
+537 = and(524, 527, 530, 533, 536)
+# Equality clause for the neighbour path variables and neighbour variables: 
+538 = or(-86, 111)
+539 = or(-111, 86)
+540 = and(538, 539)
+541 = or(-87, 112)
+542 = or(-112, 87)
+543 = and(541, 542)
+544 = or(-88, 113)
+545 = or(-113, 88)
+546 = and(544, 545)
+547 = or(-89, 114)
+548 = or(-114, 89)
+549 = and(547, 548)
+550 = or(-90, 115)
+551 = or(-115, 90)
+552 = and(550, 551)
+553 = and(540, 543, 546, 549, 552)
+554 = or(-537, 553)
+# The goal position is occupied and the color is black: 
+# if then clause : 
+555 = or(-537, 486)
+# Constratins for position 3 :
+# Equality clause for the current path variables and forall position variables: 
+556 = or(-86, 46)
+557 = or(-46, 86)
+558 = and(556, 557)
+559 = or(-87, 47)
+560 = or(-47, 87)
+561 = and(559, 560)
+562 = or(-88, 48)
+563 = or(-48, 88)
+564 = and(562, 563)
+565 = or(-89, 49)
+566 = or(-49, 89)
+567 = and(565, 566)
+568 = or(-90, 50)
+569 = or(-50, 90)
+570 = and(568, 569)
+571 = and(558, 561, 564, 567, 570)
+# Equality clause for the neighbour path variables and neighbour variables: 
+572 = or(-91, 111)
+573 = or(-111, 91)
+574 = and(572, 573)
+575 = or(-92, 112)
+576 = or(-112, 92)
+577 = and(575, 576)
+578 = or(-93, 113)
+579 = or(-113, 93)
+580 = and(578, 579)
+581 = or(-94, 114)
+582 = or(-114, 94)
+583 = and(581, 582)
+584 = or(-95, 115)
+585 = or(-115, 95)
+586 = and(584, 585)
+587 = and(574, 577, 580, 583, 586)
+588 = or(-571, 587)
+# The goal position is occupied and the color is black: 
+# if then clause : 
+589 = or(-571, 486)
+# Constratins for position 4 :
+# Equality clause for the current path variables and forall position variables: 
+590 = or(-91, 46)
+591 = or(-46, 91)
+592 = and(590, 591)
+593 = or(-92, 47)
+594 = or(-47, 92)
+595 = and(593, 594)
+596 = or(-93, 48)
+597 = or(-48, 93)
+598 = and(596, 597)
+599 = or(-94, 49)
+600 = or(-49, 94)
+601 = and(599, 600)
+602 = or(-95, 50)
+603 = or(-50, 95)
+604 = and(602, 603)
+605 = and(592, 595, 598, 601, 604)
+# Equality clause for the neighbour path variables and neighbour variables: 
+606 = or(-96, 111)
+607 = or(-111, 96)
+608 = and(606, 607)
+609 = or(-97, 112)
+610 = or(-112, 97)
+611 = and(609, 610)
+612 = or(-98, 113)
+613 = or(-113, 98)
+614 = and(612, 613)
+615 = or(-99, 114)
+616 = or(-114, 99)
+617 = and(615, 616)
+618 = or(-100, 115)
+619 = or(-115, 100)
+620 = and(618, 619)
+621 = and(608, 611, 614, 617, 620)
+622 = or(-605, 621)
+# The goal position is occupied and the color is black: 
+# if then clause : 
+623 = or(-605, 486)
+# Constratins for position 5 :
+# Equality clause for the current path variables and forall position variables: 
+624 = or(-96, 46)
+625 = or(-46, 96)
+626 = and(624, 625)
+627 = or(-97, 47)
+628 = or(-47, 97)
+629 = and(627, 628)
+630 = or(-98, 48)
+631 = or(-48, 98)
+632 = and(630, 631)
+633 = or(-99, 49)
+634 = or(-49, 99)
+635 = and(633, 634)
+636 = or(-100, 50)
+637 = or(-50, 100)
+638 = and(636, 637)
+639 = and(626, 629, 632, 635, 638)
+# Equality clause for the neighbour path variables and neighbour variables: 
+640 = or(-101, 111)
+641 = or(-111, 101)
+642 = and(640, 641)
+643 = or(-102, 112)
+644 = or(-112, 102)
+645 = and(643, 644)
+646 = or(-103, 113)
+647 = or(-113, 103)
+648 = and(646, 647)
+649 = or(-104, 114)
+650 = or(-114, 104)
+651 = and(649, 650)
+652 = or(-105, 115)
+653 = or(-115, 105)
+654 = and(652, 653)
+655 = and(642, 645, 648, 651, 654)
+656 = or(-639, 655)
+# The goal position is occupied and the color is black: 
+# if then clause : 
+657 = or(-639, 486)
+# Constratins for position 6 :
+# Equality clause for the current path variables and forall position variables: 
+658 = or(-101, 46)
+659 = or(-46, 101)
+660 = and(658, 659)
+661 = or(-102, 47)
+662 = or(-47, 102)
+663 = and(661, 662)
+664 = or(-103, 48)
+665 = or(-48, 103)
+666 = and(664, 665)
+667 = or(-104, 49)
+668 = or(-49, 104)
+669 = and(667, 668)
+670 = or(-105, 50)
+671 = or(-50, 105)
+672 = and(670, 671)
+673 = and(660, 663, 666, 669, 672)
+# Equality clause for the neighbour path variables and neighbour variables: 
+674 = or(-106, 111)
+675 = or(-111, 106)
+676 = and(674, 675)
+677 = or(-107, 112)
+678 = or(-112, 107)
+679 = and(677, 678)
+680 = or(-108, 113)
+681 = or(-113, 108)
+682 = and(680, 681)
+683 = or(-109, 114)
+684 = or(-114, 109)
+685 = and(683, 684)
+686 = or(-110, 115)
+687 = or(-115, 110)
+688 = and(686, 687)
+689 = and(676, 679, 682, 685, 688)
+690 = or(-673, 689)
+# The goal position is occupied and the color is black: 
+# if then clause : 
+691 = or(-673, 486)
+# Constratins for position 7 :
+# Equality clause for the current path variables and forall position variables: 
+692 = or(-106, 46)
+693 = or(-46, 106)
+694 = and(692, 693)
+695 = or(-107, 47)
+696 = or(-47, 107)
+697 = and(695, 696)
+698 = or(-108, 48)
+699 = or(-48, 108)
+700 = and(698, 699)
+701 = or(-109, 49)
+702 = or(-49, 109)
+703 = and(701, 702)
+704 = or(-110, 50)
+705 = or(-50, 110)
+706 = and(704, 705)
+707 = and(694, 697, 700, 703, 706)
+# The goal position is occupied and the color is black: 
+# if then clause : 
+708 = or(-707, 486)
+# Start boarder clauses : 
+709 = and(-71, -72, -73, -74, -75)
+710 = and(-71, -72, 73, -74, 75)
+711 = and(-71, 72, -73, 74, -75)
+712 = and(-71, 72, 73, 74, 75)
+713 = and(71, -72, 73, -74, -75)
+# disjunction of all start boarder positions : 
+714 = or(709, 710, 711, 712, 713)
+# End boarder clauses : 
+715 = and(-106, -107, 108, -109, -110)
+716 = and(-106, 107, -108, -109, 110)
+717 = and(-106, 107, 108, 109, -110)
+718 = and(106, -107, -108, 109, 110)
+719 = and(106, 107, -108, -109, -110)
+# disjunction of all end boarder positions : 
+720 = or(715, 716, 717, 718, 719)
+# Final and gate for goal constraints: 
+721 = and(374, 380, 385, 390, 392, 396, 400, 404, 407, 411, 415, 420, 424, 426, 430, 434, 438, 441, 444, 447, 450, 452, 485, 487, 520, 521, 554, 555, 588, 589, 622, 623, 656, 657, 690, 691, 708, 714, 720)
+# ------------------------------------------------------------------------
+# Restricted black moves: 
+722 = and(1, -2)
+723 = and(1, 2, -3, -4, -5)
+724 = or(-1, 722, 723)
+725 = and(11, -12)
+726 = and(11, 12, -13, -14, -15)
+727 = or(-11, 725, 726)
+728 = and(21, -22)
+729 = and(21, 22, -23, -24, -25)
+730 = or(-21, 728, 729)
+731 = and(31, -32)
+732 = and(31, 32, -33, -34, -35)
+733 = or(-31, 731, 732)
+734 = and(41, -42)
+735 = and(41, 42, -43, -44, -45)
+736 = or(-41, 734, 735)
+# And gate for all restricted black move clauses: 
+737 = and(724, 727, 730, 733, 736)
+# ------------------------------------------------------------------------
+# Final gate: 
+# Conjunction of Initial gate and Transition gate and Goal gate: 
+738 = and(737, 369, 354, 721)

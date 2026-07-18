@@ -144,3 +144,11 @@ human_games_repo/*
 bloqqer-qdo
 hqspre
 Gex_generators/intermediate_files/*
+
+# Keep paper QCIR goldens tracked
+!Benchmarks/positional_goldens/
+!Benchmarks/positional_goldens/**
+!Benchmarks/SAT2023_GDDL/
+!Benchmarks/SAT2023_GDDL/**
+!Benchmarks/B-Hex/
+!Benchmarks/B-Hex/**
